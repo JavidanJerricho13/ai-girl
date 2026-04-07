@@ -6,6 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { CharactersModule } from './modules/characters/characters.module';
 import { ConversationsModule } from './modules/conversations/conversations.module';
 import { MemoryModule } from './modules/memory/memory.module';
+import { MediaModule } from './modules/media/media.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { MemoryModule } from './modules/memory/memory.module';
     CharactersModule,
     MemoryModule,
     ConversationsModule,
+    MediaModule,
   ],
   controllers: [HealthController],
   providers: [],
