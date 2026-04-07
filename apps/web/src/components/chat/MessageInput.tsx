@@ -28,7 +28,8 @@ export function MessageInput({ onSend, disabled }: MessageInputProps) {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type a message..."
           disabled={disabled}
-          className="flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          // 👇 Добавлены text-gray-900 и bg-white
+          className="flex-1 p-3 text-gray-900 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         />
         <button
           type="submit"
