@@ -17,7 +17,7 @@ export class GroqService {
     userMessage: string;
   }) {
     const stream = await this.client.chat.completions.create({
-      model: 'llama3-70b-8192',
+      model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: params.systemPrompt },
         { role: 'user', content: params.userMessage },
