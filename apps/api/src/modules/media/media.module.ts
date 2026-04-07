@@ -2,7 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MediaController } from './media.controller';
 import { ImageGenerationService } from './services/image-generation.service';
+import { TtsService } from './services/tts.service';
 import { FalService } from '../../integrations/fal/fal.service';
+import { ElevenLabsService } from '../../integrations/elevenlabs/elevenlabs.service';
+import { AzureTtsService } from '../../integrations/azure-tts/azure-tts.service';
 import { StorageService } from '../../common/services/storage.service';
 import { PrismaService } from '../../common/services/prisma.service';
 
@@ -11,10 +14,13 @@ import { PrismaService } from '../../common/services/prisma.service';
   controllers: [MediaController],
   providers: [
     ImageGenerationService,
+    TtsService,
     FalService,
+    ElevenLabsService,
+    AzureTtsService,
     StorageService,
     PrismaService,
   ],
-  exports: [ImageGenerationService, FalService, StorageService],
+  exports: [ImageGenerationService, TtsService, FalService, StorageService],
 })
 export class MediaModule {}

@@ -12,7 +12,9 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ImageGenerationService } from './services/image-generation.service';
+import { TtsService } from './services/tts.service';
 import { GenerateImageDto } from './dto/generate-image.dto';
+import { GenerateVoiceDto } from './dto/generate-voice.dto';
 
 @ApiTags('media')
 @Controller('media')
@@ -21,6 +23,7 @@ import { GenerateImageDto } from './dto/generate-image.dto';
 export class MediaController {
   constructor(
     private readonly imageGenerationService: ImageGenerationService,
+    private readonly ttsService: TtsService,
   ) {}
 
   @Post('generate/image')
@@ -48,6 +51,40 @@ export class MediaController {
       imageSize: dto.imageSize,
       usePro: dto.usePro,
     });
+  }
+
+  @Post('generate/voice')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Generate voice/TTS audio (costs 3 credits)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Voice generated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        audioUrl: { type: 'string' },
+        creditsUsed: { type: 'number' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid request or insufficient credits' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async generateVoice(@Request() req, @Body() dto: GenerateVoiceDto) {
+    const language = dto.language || this.ttsService.detectLanguage(dto.text);
+    
+    return this.ttsService.synthesize({
+      text: dto.text,
+      language,
+      characterId: dto.characterId,
+      userId: req.user.userId,
+    });
+  }
+
+  @Get('voices')
+  @ApiOperation({ summary: 'Get available voices' })
+  @ApiResponse({ status: 200, description: 'Voices retrieved' })
+  async getVoices() {
+    return this.ttsService.getAvailableVoices();
   }
 
   @Get('generate/jobs/:jobId')
