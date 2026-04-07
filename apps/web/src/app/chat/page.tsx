@@ -118,11 +118,22 @@ function ChatPageContent() {
   };
 
   const handleNewConversation = async () => {
-    // For now, just create a new conversation with the first character
-    // In a full implementation, you'd show a character selector
     try {
+      // Fetch available characters first
+      const charactersResponse = await apiClient.get('/characters');
+      const characters = charactersResponse.data;
+      
+      if (!characters || characters.length === 0) {
+        console.error('No characters available');
+        alert('No characters available. Please contact support.');
+        return;
+      }
+      
+      // Default to the first character (e.g., 'Leyla')
+      const defaultCharacter = characters[0];
+      
       const response = await apiClient.post('/conversations', {
-        characterId: '1', // Default character - should be dynamic
+        characterId: defaultCharacter.id,
       });
       
       const newConversation = response.data;
@@ -134,6 +145,7 @@ function ChatPageContent() {
       }
     } catch (error) {
       console.error('Failed to create conversation:', error);
+      alert('Failed to create conversation. Please try again.');
     }
   };
 

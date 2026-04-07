@@ -56,10 +56,21 @@ async function main() {
   ];
 
   for (const char of characters) {
-    const character = await prisma.character.upsert({
-      where: { name: char.name },
-      update: {},
-      create: {
+    // Check if character already exists
+    const existing = await prisma.character.findFirst({
+      where: {
+        name: char.name,
+        isOfficial: true,
+      },
+    });
+
+    if (existing) {
+      console.log('⏭️  Character already exists:', char.displayName);
+      continue;
+    }
+
+    const character = await prisma.character.create({
+      data: {
         ...char,
         createdBy: testUser.id,
       },
@@ -70,26 +81,26 @@ async function main() {
 
   // Create credit packages
   const packages = [
-    { 
-      name: 'Small Pack', 
-      credits: 500, 
-      price: 4.99, 
-      platform: 'ios', 
-      productId: 'com.ethereal.credits.small' 
+    {
+      name: 'Small Pack',
+      credits: 500,
+      price: 4.99,
+      platform: 'ios',
+      productId: 'com.ethereal.credits.small'
     },
-    { 
-      name: 'Medium Pack', 
-      credits: 1200, 
-      price: 9.99, 
-      platform: 'ios', 
-      productId: 'com.ethereal.credits.medium' 
+    {
+      name: 'Small Pack',
+      credits: 500,
+      price: 4.99,
+      platform: 'android',
+      productId: 'com.ethereal.credits.small.android'
     },
-    { 
-      name: 'Large Pack', 
-      credits: 2500, 
-      price: 19.99, 
-      platform: 'ios', 
-      productId: 'com.ethereal.credits.large' 
+    {
+      name: 'Small Pack',
+      credits: 500,
+      price: 4.99,
+      platform: 'web',
+      productId: 'com.ethereal.credits.small.web'
     },
   ];
 
