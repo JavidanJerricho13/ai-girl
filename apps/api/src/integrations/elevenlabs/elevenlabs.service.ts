@@ -14,13 +14,21 @@ export interface ElevenLabsVoiceParams {
 @Injectable()
 export class ElevenLabsService {
   private readonly logger = new Logger(ElevenLabsService.name);
-  private readonly client: ElevenLabsClient;
+  private readonly client: ElevenLabsClient | null;
+  private readonly isAvailable: boolean;
 
   constructor(private config: ConfigService) {
-    this.client = new ElevenLabsClient({
-      apiKey: config.get('ELEVENLABS_API_KEY'),
-    });
-    this.logger.log('ElevenLabs service initialized');
+    const apiKey = config.get('ELEVENLABS_API_KEY');
+    
+    if (apiKey) {
+      this.client = new ElevenLabsClient({ apiKey });
+      this.isAvailable = true;
+      this.logger.log('ElevenLabs service initialized');
+    } else {
+      this.client = null;
+      this.isAvailable = false;
+      this.logger.warn('ElevenLabs API key not provided - service disabled');
+    }
   }
 
   /**
@@ -29,6 +37,10 @@ export class ElevenLabsService {
    * @returns Audio buffer (MP3 format)
    */
   async synthesize(params: ElevenLabsVoiceParams): Promise<Buffer> {
+    if (!this.isAvailable || !this.client) {
+      throw new Error('ElevenLabs service is not available. API key not configured.');
+    }
+
     try {
       this.logger.log(`Synthesizing speech with ElevenLabs for voice: ${params.voiceId}`);
 
@@ -64,6 +76,10 @@ export class ElevenLabsService {
    * Get available voices from ElevenLabs
    */
   async getVoices() {
+    if (!this.isAvailable || !this.client) {
+      return [];
+    }
+
     try {
       const voices = await this.client.voices.getAll();
       return voices.voices.map((voice) => ({
@@ -83,6 +99,10 @@ export class ElevenLabsService {
    * Get voice details
    */
   async getVoice(voiceId: string) {
+    if (!this.isAvailable || !this.client) {
+      throw new Error('ElevenLabs service is not available. API key not configured.');
+    }
+
     try {
       const voice = await this.client.voices.get(voiceId);
       return {

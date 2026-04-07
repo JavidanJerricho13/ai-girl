@@ -7,6 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from '../chat/chat.service';
+import { VideoStateService } from './services/video-state.service';
 
 @WebSocketGateway({
   cors: {
@@ -17,7 +18,10 @@ export class ConversationsGateway {
   @WebSocketServer()
   server: Server;
 
-  constructor(private chatService: ChatService) {}
+  constructor(
+    private chatService: ChatService,
+    private videoStateService: VideoStateService,
+  ) {}
 
   @SubscribeMessage('send-message')
   async handleMessage(
@@ -68,5 +72,21 @@ export class ConversationsGateway {
   ) {
     client.leave(data.conversationId);
     client.emit('left-conversation', { conversationId: data.conversationId });
+  }
+
+  @SubscribeMessage('video-state-change')
+  handleVideoStateChange(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conversationId: string; state: string },
+  ) {
+    const stateData = this.videoStateService.getState(data.conversationId);
+    this.server.to(data.conversationId).emit('video-state-update', stateData);
+  }
+
+  /**
+   * Emit video state change to all clients in a conversation
+   */
+  emitVideoStateChange(conversationId: string, stateData: any) {
+    this.server.to(conversationId).emit('video-state-update', stateData);
   }
 }
