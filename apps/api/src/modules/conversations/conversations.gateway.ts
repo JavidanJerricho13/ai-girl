@@ -22,17 +22,51 @@ export class ConversationsGateway {
   @SubscribeMessage('send-message')
   async handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { content: string },
+    @MessageBody() data: { conversationId: string; userId: string; content: string },
   ) {
     try {
-      // Stream response
-      for await (const chunk of this.chatService.processMessage(data)) {
-        client.emit('message-chunk', { chunk });
+      // Validate required fields
+      if (!data.conversationId || !data.userId || !data.content) {
+        client.emit('message-error', {
+          error: 'Missing required fields: conversationId, userId, or content'
+        });
+        return;
       }
 
-      client.emit('message-complete');
+      // Join conversation room
+      client.join(data.conversationId);
+
+      // Stream response
+      for await (const chunk of this.chatService.processMessage({
+        conversationId: data.conversationId,
+        userId: data.userId,
+        content: data.content,
+      })) {
+        // Emit to the specific conversation room
+        this.server.to(data.conversationId).emit('message-chunk', { chunk });
+      }
+
+      this.server.to(data.conversationId).emit('message-complete');
     } catch (error) {
       client.emit('message-error', { error: error.message });
     }
+  }
+
+  @SubscribeMessage('join-conversation')
+  handleJoinConversation(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conversationId: string },
+  ) {
+    client.join(data.conversationId);
+    client.emit('joined-conversation', { conversationId: data.conversationId });
+  }
+
+  @SubscribeMessage('leave-conversation')
+  handleLeaveConversation(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conversationId: string },
+  ) {
+    client.leave(data.conversationId);
+    client.emit('left-conversation', { conversationId: data.conversationId });
   }
 }

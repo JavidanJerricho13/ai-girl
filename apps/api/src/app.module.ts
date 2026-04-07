@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CharactersModule } from './modules/characters/characters.module';
 import { ConversationsModule } from './modules/conversations/conversations.module';
+import { MemoryModule } from './modules/memory/memory.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ConversationsModule } from './modules/conversations/conversations.modul
     AuthModule,
     UsersModule,
     CharactersModule,
+    MemoryModule,
     ConversationsModule,
   ],
   controllers: [HealthController],

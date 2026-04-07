@@ -1,13 +1,28 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ChatService } from './chat.service';
 import { ModelRouterService } from './services/model-router.service';
 import { GroqService } from '../../integrations/groq/groq.service';
 import { OpenAIService } from '../../integrations/openai/openai.service';
+import { PrismaService } from '../../common/services/prisma.service';
+import { MemoryModule } from '../memory/memory.module';
+import { ConversationsModule } from '../conversations/conversations.module';
+import { CharactersModule } from '../characters/characters.module';
 
 @Module({
-  imports: [ConfigModule],
-  providers: [ChatService, ModelRouterService, GroqService, OpenAIService],
+  imports: [
+    ConfigModule,
+    MemoryModule,
+    forwardRef(() => ConversationsModule),
+    CharactersModule,
+  ],
+  providers: [
+    ChatService,
+    ModelRouterService,
+    GroqService,
+    OpenAIService,
+    PrismaService,
+  ],
   exports: [ChatService],
 })
 export class ChatModule {}
