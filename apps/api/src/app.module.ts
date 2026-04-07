@@ -7,6 +7,8 @@ import { CharactersModule } from './modules/characters/characters.module';
 import { ConversationsModule } from './modules/conversations/conversations.module';
 import { MemoryModule } from './modules/memory/memory.module';
 import { MediaModule } from './modules/media/media.module';
+import { CreditsModule } from './modules/credits/credits.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { MediaModule } from './modules/media/media.module';
     MemoryModule,
     ConversationsModule,
     MediaModule,
+    CreditsModule,
+    PaymentsModule,
   ],
   controllers: [HealthController],
   providers: [],

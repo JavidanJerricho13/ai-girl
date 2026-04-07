@@ -1,15 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
 import { RAGService } from '../memory/services/rag.service';
 import { ConversationsService } from '../conversations/conversations.service';
 import { CharactersService } from '../characters/characters.service';
 import { ModelRouterService } from './services/model-router.service';
+import { CreditsService } from '../credits/credits.service';
 
 interface ProcessMessageParams {
   conversationId: string;
   userId: string;
   content: string;
 }
+
+const CHAT_MESSAGE_COST = 1; // 1 credit per message
 
 @Injectable()
 export class ChatService {
@@ -19,11 +22,26 @@ export class ChatService {
     private ragService: RAGService,
     private conversationsService: ConversationsService,
     private charactersService: CharactersService,
+    private creditsService: CreditsService,
   ) {}
 
   async *processMessage(params: ProcessMessageParams) {
     const { conversationId, userId, content } = params;
     const startTime = Date.now();
+
+    // Check and deduct credits BEFORE processing
+    try {
+      await this.creditsService.deductCredits({
+        userId,
+        amount: CHAT_MESSAGE_COST,
+        description: 'Chat message',
+        metadata: { conversationId, action: 'chat_message' },
+      });
+    } catch (error) {
+      throw new BadRequestException(
+        error.message || 'Insufficient credits for chat message'
+      );
+    }
 
     // 1. Get conversation and character details
     const conversation = await this.conversationsService.findOne(conversationId, userId);

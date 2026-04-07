@@ -8,6 +8,7 @@ import { PrismaService } from '../../common/services/prisma.service';
 import { MemoryModule } from '../memory/memory.module';
 import { ConversationsModule } from '../conversations/conversations.module';
 import { CharactersModule } from '../characters/characters.module';
+import { CreditsModule } from '../credits/credits.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CharactersModule } from '../characters/characters.module';
     MemoryModule,
     forwardRef(() => ConversationsModule),
     CharactersModule,
+    CreditsModule,
   ],
   providers: [
     ChatService,
