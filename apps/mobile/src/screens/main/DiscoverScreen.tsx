@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { apiService } from '../../services/api.service';
+import { CharacterCardSkeleton } from '../../components/LoadingSkeleton';
+import { AnimatedCreditBadge } from '../../components/AnimatedCreditBadge';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
@@ -173,10 +175,13 @@ export default function DiscoverScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Discover</Text>
-        <Text style={styles.headerSubtitle}>
-          Find your perfect AI companion
-        </Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>Discover</Text>
+          <Text style={styles.headerSubtitle}>
+            Find your perfect AI companion
+          </Text>
+        </View>
+        <AnimatedCreditBadge onPress={() => (navigation as any).navigate('Subscription')} />
       </View>
 
       <View style={styles.categoriesContainer}>
@@ -191,10 +196,13 @@ export default function DiscoverScreen() {
       </View>
 
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8B5CF6" />
-          <Text style={styles.loadingText}>Loading characters...</Text>
-        </View>
+        <FlatList
+          data={[1, 2, 3, 4, 5, 6]}
+          renderItem={() => <CharacterCardSkeleton />}
+          keyExtractor={(item) => item.toString()}
+          numColumns={2}
+          contentContainerStyle={styles.gridContainer}
+        />
       ) : (
         <FlatList
           data={characters}
@@ -227,12 +235,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+  },
+  headerLeft: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 28,

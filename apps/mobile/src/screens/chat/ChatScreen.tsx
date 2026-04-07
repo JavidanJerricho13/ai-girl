@@ -18,6 +18,8 @@ import { useChatStore } from '../../store/chat.store';
 import { useAuthStore } from '../../store/auth.store';
 import { websocketService, Message } from '../../services/websocket.service';
 import { apiService } from '../../services/api.service';
+import { MessageSkeleton } from '../../components/LoadingSkeleton';
+import { AnimatedCreditBadge } from '../../components/AnimatedCreditBadge';
 
 interface RouteParams {
   conversationId: string;
@@ -286,10 +288,26 @@ export default function ChatScreen() {
 
   if (isLoadingHistory) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
-        <Text style={styles.loadingText}>Loading conversation...</Text>
-      </View>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          {characterAvatar && (
+            <Image source={{ uri: characterAvatar }} style={styles.headerAvatar} />
+          )}
+          <Text style={styles.headerTitle}>{characterName || 'Chat'}</Text>
+        </View>
+        <View style={styles.messagesList}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <MessageSkeleton key={i} isUser={i % 2 === 0} />
+          ))}
+        </View>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -300,13 +318,16 @@ export default function ChatScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        {characterAvatar && (
-          <Image source={{ uri: characterAvatar }} style={styles.headerAvatar} />
-        )}
-        <Text style={styles.headerTitle}>{characterName || 'Chat'}</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          {characterAvatar && (
+            <Image source={{ uri: characterAvatar }} style={styles.headerAvatar} />
+          )}
+          <Text style={styles.headerTitle}>{characterName || 'Chat'}</Text>
+        </View>
+        <AnimatedCreditBadge onPress={() => (navigation as any).navigate('Subscription')} />
       </View>
 
       <FlatList
@@ -375,11 +396,17 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   backButton: {
     marginRight: 12,
