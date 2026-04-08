@@ -8,15 +8,16 @@
     "jsx": "react-native",
     "moduleResolution": "node",
     "baseUrl": "./",
+    "typeRoots": ["./node_modules/@types"],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ],
   "exclude": [
     "node_modules"

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd.exe /c \"node -e \\\\\"console.log\\(require\\('C:/Users/user/Others/Desktop/aigirlaz/node_modules/react/package.json'\\).version\\)\\\\\"\")"
+    ]
+  }
+}

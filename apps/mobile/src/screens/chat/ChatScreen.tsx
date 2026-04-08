@@ -13,7 +13,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, AudioPlayer } from 'expo-audio';
 import { useChatStore } from '../../store/chat.store';
 import { useAuthStore } from '../../store/auth.store';
 import { websocketService, Message } from '../../services/websocket.service';
@@ -39,7 +39,7 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [sound, setSound] = useState<AudioPlayer | null>(null);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   
   const flatListRef = useRef<FlatList>(null);
@@ -74,7 +74,7 @@ export default function ChatScreen() {
       unsubscribeChunk();
       unsubscribeTyping();
       if (sound) {
-        sound.unloadAsync();
+        sound.remove();
       }
     };
   }, [conversationId]);
@@ -138,8 +138,8 @@ export default function ChatScreen() {
     try {
       // Stop currently playing audio
       if (sound && playingAudioId) {
-        await sound.stopAsync();
-        await sound.unloadAsync();
+        sound.pause();
+        sound.remove();
         setSound(null);
         if (playingAudioId === messageId) {
           setPlayingAudioId(null);
@@ -148,18 +148,16 @@ export default function ChatScreen() {
       }
 
       // Play new audio
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: audioUrl },
-        { shouldPlay: true }
-      );
+      const player = createAudioPlayer({ uri: audioUrl });
+      player.play();
 
-      setSound(newSound);
+      setSound(player);
       setPlayingAudioId(messageId);
 
-      newSound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
+      player.addListener('playbackStatusUpdate', (status) => {
+        if (status.didJustFinish) {
           setPlayingAudioId(null);
-          newSound.unloadAsync();
+          player.remove();
         }
       });
     } catch (error) {

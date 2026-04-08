@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { Audio } from 'expo-av';
+import { AudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { websocketService, VideoState } from '../../services/websocket.service';
 import { apiService } from '../../services/api.service';
 
@@ -40,7 +40,7 @@ export default function VideoCallScreen() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [characterEmotion, setCharacterEmotion] = useState('neutral');
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [sound, setSound] = useState<AudioPlayer | null>(null);
 
   useEffect(() => {
     // Set up WebSocket event handler for video state updates
@@ -61,19 +61,18 @@ export default function VideoCallScreen() {
       unsubscribeVideoState();
       endCall();
       if (sound) {
-        sound.unloadAsync();
+        sound.remove();
       }
     };
   }, [conversationId]);
 
   const initializeAudio = async () => {
     try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        shouldRouteThroughEarpiece: false,
       });
     } catch (error) {
       console.error('Failed to initialize audio:', error);
