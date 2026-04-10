@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { TypingIndicator } from './TypingIndicator';
 
@@ -15,36 +16,49 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages, isTyping }: MessageListProps) {
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
+
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-4">
+    <div className="flex-1 overflow-y-auto px-4 py-6 space-y-3">
       {messages.map((message) => (
         <motion.div
           key={message.id}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          transition={{ duration: 0.2 }}
+          className={`flex ${
+            message.role === 'user' ? 'justify-end' : 'justify-start'
+          }`}
         >
           <div
-            className={`max-w-[70%] p-4 rounded-2xl ${
+            className={`max-w-[75%] px-4 py-2.5 text-sm leading-relaxed ${
               message.role === 'user'
-                ? 'bg-blue-500 text-white rounded-br-none'
-                : 'bg-gray-100 text-gray-900 rounded-bl-none'
+                ? 'bg-purple-600 text-white rounded-2xl rounded-br-md'
+                : 'bg-gray-800 text-gray-200 rounded-2xl rounded-bl-md border border-gray-700/50'
             }`}
           >
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <p className="whitespace-pre-wrap break-words">
+              {message.content}
+            </p>
           </div>
         </motion.div>
       ))}
-      
+
       {isTyping && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex justify-start"
         >
           <TypingIndicator />
         </motion.div>
       )}
+
+      <div ref={endRef} />
     </div>
   );
 }

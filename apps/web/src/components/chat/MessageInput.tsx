@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 
 interface MessageInputProps {
@@ -10,6 +10,15 @@ interface MessageInputProps {
 
 export function MessageInput({ onSend, disabled }: MessageInputProps) {
   const [input, setInput] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [input]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,24 +28,35 @@ export function MessageInput({ onSend, disabled }: MessageInputProps) {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="border-t bg-white p-4">
-      <div className="flex items-center space-x-2">
-        <input
-          type="text"
+    <form
+      onSubmit={handleSubmit}
+      className="shrink-0 border-t border-gray-800 bg-gray-950/60 p-3"
+    >
+      <div className="flex items-end gap-2">
+        <textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Type a message..."
           disabled={disabled}
-          // 👇 Добавлены text-gray-900 и bg-white
-          className="flex-1 p-3 text-gray-900 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          rows={1}
+          className="flex-1 resize-none bg-gray-800 text-gray-200 placeholder-gray-500 border border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/30 disabled:opacity-50 transition-colors"
         />
         <button
           type="submit"
           disabled={!input.trim() || disabled}
-          className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shrink-0"
         >
-          <Send size={20} />
+          <Send size={18} />
         </button>
       </div>
     </form>

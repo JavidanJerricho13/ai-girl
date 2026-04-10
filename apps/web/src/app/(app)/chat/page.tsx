@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useQueryClient } from '@tanstack/react-query';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { ConversationList } from '@/components/chat/ConversationList';
 import { useAuthStore } from '@/store/auth.store';
 import apiClient from '@/lib/api-client';
+import { MessageSquare } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -13,39 +15,44 @@ interface Message {
   content: string;
 }
 
+interface ActiveCharacter {
+  id: string;
+  name: string;
+  displayName: string;
+  avatarUrl?: string;
+}
+
 export default function ChatPage() {
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
+  const [activeCharacter, setActiveCharacter] =
+    useState<ActiveCharacter | null>(null);
   const currentAssistantMessage = useRef('');
 
   useEffect(() => {
     const newSocket = io('http://localhost:3001');
     setSocket(newSocket);
 
-    newSocket.on('connect', () => {
-      console.log('Connected to WebSocket server');
-      setIsConnected(true);
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from WebSocket server');
-      setIsConnected(false);
-    });
+    newSocket.on('connect', () => setIsConnected(true));
+    newSocket.on('disconnect', () => setIsConnected(false));
 
     newSocket.on('message-chunk', (data: { chunk: string }) => {
       currentAssistantMessage.current += data.chunk;
 
       setMessages((prev) => {
         const newMessages = [...prev];
-        const lastMessage = newMessages[newMessages.length - 1];
+        const last = newMessages[newMessages.length - 1];
 
-        if (lastMessage && lastMessage.role === 'assistant') {
+        if (last && last.role === 'assistant') {
           newMessages[newMessages.length - 1] = {
-            ...lastMessage,
+            ...last,
             content: currentAssistantMessage.current,
           };
         } else {
@@ -55,7 +62,6 @@ export default function ChatPage() {
             content: currentAssistantMessage.current,
           });
         }
-
         return newMessages;
       });
     });
@@ -66,10 +72,8 @@ export default function ChatPage() {
     });
 
     newSocket.on('message-error', (data: { error: string }) => {
-      console.error('Message error:', data.error);
       setIsTyping(false);
       currentAssistantMessage.current = '';
-
       setMessages((prev) => [
         ...prev,
         {
@@ -85,90 +89,118 @@ export default function ChatPage() {
     };
   }, []);
 
-  const handleSelectConversation = async (conversationId: string) => {
-    setSelectedConversationId(conversationId);
+  const handleSelectConversation = useCallback(
+    async (
+      conversationId: string,
+      character: {
+        id: string;
+        name: string;
+        displayName: string;
+        media: Array<{ url: string; type: string }>;
+      },
+    ) => {
+      setSelectedConversationId(conversationId);
+      const avatarUrl = character.media?.find(
+        (m) => m.type === 'profile',
+      )?.url;
+      setActiveCharacter({
+        id: character.id,
+        name: character.name,
+        displayName: character.displayName,
+        avatarUrl,
+      });
 
-    try {
-      const response = await apiClient.get(`/conversations/${conversationId}`);
-      const conversation = response.data;
+      try {
+        const response = await apiClient.get(
+          `/conversations/${conversationId}`,
+        );
+        const conversation = response.data;
+        setMessages(
+          conversation.messages.map((msg: any) => ({
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+          })),
+        );
 
-      const formattedMessages = conversation.messages.map((msg: any) => ({
-        id: msg.id,
-        role: msg.role,
-        content: msg.content,
-      }));
-
-      setMessages(formattedMessages);
-
-      if (socket) {
-        socket.emit('join-conversation', { conversationId });
+        if (socket) {
+          socket.emit('join-conversation', { conversationId });
+        }
+      } catch {
+        console.error('Failed to load conversation');
       }
-    } catch (error) {
-      console.error('Failed to load conversation:', error);
-    }
-  };
+    },
+    [socket],
+  );
 
-  const handleNewConversation = async () => {
+  const handleNewConversation = useCallback(async () => {
     try {
-      const charactersResponse = await apiClient.get('/characters');
-      const characters = charactersResponse.data;
-
-      if (!characters || characters.length === 0) {
-        console.error('No characters available');
-        alert('No characters available. Please contact support.');
+      const res = await apiClient.get('/characters');
+      const characters = res.data?.data ?? res.data ?? [];
+      if (!characters.length) {
+        alert('No characters available.');
         return;
       }
 
-      const defaultCharacter = characters[0];
-
-      const response = await apiClient.post('/conversations', {
-        characterId: defaultCharacter.id,
+      const char = characters[0];
+      const convRes = await apiClient.post('/conversations', {
+        characterId: char.id,
       });
 
-      const newConversation = response.data;
-      setSelectedConversationId(newConversation.id);
+      const newConv = convRes.data;
+      const avatarUrl = char.media?.find(
+        (m: any) => m.type === 'profile',
+      )?.url;
+
+      setSelectedConversationId(newConv.id);
+      setActiveCharacter({
+        id: char.id,
+        name: char.name,
+        displayName: char.displayName || char.name,
+        avatarUrl,
+      });
       setMessages([]);
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
 
       if (socket) {
-        socket.emit('join-conversation', { conversationId: newConversation.id });
+        socket.emit('join-conversation', { conversationId: newConv.id });
       }
-    } catch (error) {
-      console.error('Failed to create conversation:', error);
-      alert('Failed to create conversation. Please try again.');
+    } catch {
+      alert('Failed to create conversation.');
     }
-  };
+  }, [socket, queryClient]);
 
-  const handleSendMessage = (content: string) => {
-    if (!socket || !isConnected || !selectedConversationId || !user) {
-      console.error('Cannot send message: missing requirements');
-      return;
-    }
+  const handleSendMessage = useCallback(
+    (content: string) => {
+      if (!socket || !isConnected || !selectedConversationId || !user) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content,
-    };
-    setMessages((prev) => [...prev, userMessage]);
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now().toString(), role: 'user', content },
+      ]);
 
-    currentAssistantMessage.current = '';
-    setIsTyping(true);
+      currentAssistantMessage.current = '';
+      setIsTyping(true);
 
-    socket.emit('send-message', {
-      conversationId: selectedConversationId,
-      userId: user.id,
-      content,
-    });
-  };
+      socket.emit('send-message', {
+        conversationId: selectedConversationId,
+        userId: user.id,
+        content,
+      });
+    },
+    [socket, isConnected, selectedConversationId, user],
+  );
 
   return (
-    <div className="flex h-full -m-4 md:-m-6">
+    <div className="flex h-full -m-4 md:-m-6 bg-gray-900">
+      {/* Conversation sidebar */}
       <ConversationList
         onSelectConversation={handleSelectConversation}
         onNewConversation={handleNewConversation}
         selectedConversationId={selectedConversationId || undefined}
       />
 
+      {/* Chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         {selectedConversationId ? (
           <ChatWindow
@@ -176,12 +208,21 @@ export default function ChatPage() {
             isTyping={isTyping}
             onSendMessage={handleSendMessage}
             disabled={!isConnected || isTyping}
+            character={activeCharacter}
           />
         ) : (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center text-gray-500">
-              <p className="text-xl mb-2">Select a conversation or start a new one</p>
-              <p className="text-sm">Your AI companion is waiting to chat with you</p>
+          <div className="h-full flex items-center justify-center bg-gray-900">
+            <div className="text-center">
+              <MessageSquare
+                size={48}
+                className="text-gray-700 mx-auto mb-4"
+              />
+              <p className="text-lg text-gray-400 mb-1">
+                Select a conversation
+              </p>
+              <p className="text-sm text-gray-600">
+                Or start a new chat to begin
+              </p>
             </div>
           </div>
         )}

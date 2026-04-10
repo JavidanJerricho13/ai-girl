@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { Info } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 
@@ -9,21 +11,64 @@ interface Message {
   content: string;
 }
 
+interface ActiveCharacter {
+  id: string;
+  name: string;
+  displayName: string;
+  avatarUrl?: string;
+}
+
 interface ChatWindowProps {
   messages: Message[];
   isTyping: boolean;
   onSendMessage: (content: string) => void;
   disabled?: boolean;
+  character?: ActiveCharacter | null;
 }
 
-export function ChatWindow({ messages, isTyping, onSendMessage, disabled }: ChatWindowProps) {
+export function ChatWindow({
+  messages,
+  isTyping,
+  onSendMessage,
+  disabled,
+  character,
+}: ChatWindowProps) {
+  const name = character
+    ? character.displayName || character.name
+    : 'AI Assistant';
+
   return (
-    <div className="flex flex-col h-screen bg-white">
-      <div className="border-b bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
-        <h1 className="text-2xl font-bold">AI Chat</h1>
-        <p className="text-sm opacity-90">Powered by Groq & OpenAI</p>
+    <div className="flex flex-col h-full bg-gray-900">
+      {/* Chat header */}
+      <div className="h-14 shrink-0 border-b border-gray-800 px-4 flex items-center justify-between bg-gray-950/60">
+        <div className="flex items-center gap-3">
+          {character?.avatarUrl ? (
+            <img
+              src={character.avatarUrl}
+              alt={name}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-semibold">
+              {name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div>
+            <p className="text-sm font-medium text-white">{name}</p>
+            <p className="text-xs text-emerald-400">Online</p>
+          </div>
+        </div>
+        {character && (
+          <Link
+            href={`/characters/${character.id}`}
+            className="p-2 text-gray-500 hover:text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"
+            title="Character info"
+          >
+            <Info size={18} />
+          </Link>
+        )}
       </div>
-      
+
       <MessageList messages={messages} isTyping={isTyping} />
       <MessageInput onSend={onSendMessage} disabled={disabled} />
     </div>
