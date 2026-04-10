@@ -10,12 +10,19 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from './admin.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles, UserRole } from '../../common/decorators/roles.decorator';
 import { AdminService } from './admin.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class AdminController {
   constructor(private adminService: AdminService) {}
+
+  @Get('health')
+  getHealth() {
+    return { status: 'ok', message: 'Admin access granted' };
+  }
 
   @Get('users')
   async getUsers(
@@ -28,6 +35,8 @@ export class AdminController {
   }
 
   @Patch('users/:id/role')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
   async updateUserRole(
     @Param('id') id: string,
     @Body('role') role: string,
@@ -36,6 +45,8 @@ export class AdminController {
   }
 
   @Patch('users/:id/status')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
   async updateUserStatus(
     @Param('id') id: string,
     @Body('isActive') isActive: boolean,
@@ -44,6 +55,8 @@ export class AdminController {
   }
 
   @Patch('users/:id/credits')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
   async addCredits(
     @Param('id') id: string,
     @Body('amount', ParseIntPipe) amount: number,
