@@ -2,14 +2,20 @@ const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
 const projectRoot = __dirname;
+const monorepoRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-// Pin react and react-native to mobile's own node_modules.
-// The monorepo root has React 18 (for the Next.js web app) which npm
-// hoists to the root, and Metro can pick it up causing two React copies.
-// Explicitly mapping each import prevents the "Invalid hook call" /
-// "Cannot read property 'useEffect' of null" crash.
+// Watch the monorepo root so Metro can find hoisted packages
+config.watchFolders = [monorepoRoot];
+
+// Resolve modules from both local and root node_modules
+config.resolver.nodeModulesPaths = [
+  path.resolve(projectRoot, 'node_modules'),
+  path.resolve(monorepoRoot, 'node_modules'),
+];
+
+// Pin react and react-native to mobile's own node_modules
 const reactDir = path.resolve(projectRoot, 'node_modules/react');
 const reactNativeDir = path.resolve(projectRoot, 'node_modules/react-native');
 
