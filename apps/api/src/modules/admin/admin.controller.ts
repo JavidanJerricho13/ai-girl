@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -23,6 +24,42 @@ export class AdminController {
   getHealth() {
     return { status: 'ok', message: 'Admin access granted' };
   }
+
+  // ── Characters ────────────────────────────────
+
+  @Get('characters')
+  async getCharacters(
+    @Query('search') search?: string,
+    @Query('isPublic') isPublic?: string,
+    @Query('category') category?: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.adminService.getCharacters({
+      search,
+      isPublic: isPublic === 'true' ? true : isPublic === 'false' ? false : undefined,
+      category,
+      page,
+      limit,
+    });
+  }
+
+  @Delete('characters/:id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async deleteCharacter(@Param('id') id: string) {
+    return this.adminService.deleteCharacter(id);
+  }
+
+  @Patch('characters/:id/visibility')
+  async updateCharacterVisibility(
+    @Param('id') id: string,
+    @Body('isPublic') isPublic: boolean,
+  ) {
+    return this.adminService.updateCharacterVisibility(id, isPublic);
+  }
+
+  // ── Users ────────────────────────────────────
 
   @Get('users')
   async getUsers(

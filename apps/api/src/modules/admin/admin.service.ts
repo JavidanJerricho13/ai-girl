@@ -5,6 +5,79 @@ import { PrismaService } from '../../common/services/prisma.service';
 export class AdminService {
   constructor(private prisma: PrismaService) {}
 
+  // ── Characters ────────────────────────────────
+
+  async getCharacters(params: {
+    search?: string;
+    isPublic?: boolean;
+    category?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const page = params.page ?? 1;
+    const limit = params.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (params.search) {
+      where.OR = [
+        { name: { contains: params.search, mode: 'insensitive' } },
+        { displayName: { contains: params.search, mode: 'insensitive' } },
+        { description: { contains: params.search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (params.isPublic !== undefined) {
+      where.isPublic = params.isPublic;
+    }
+
+    if (params.category) {
+      where.category = { has: params.category };
+    }
+
+    const [characters, total] = await Promise.all([
+      this.prisma.character.findMany({
+        where,
+        include: {
+          media: { where: { type: 'profile' }, take: 1 },
+          creator: { select: { id: true, username: true, email: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.character.count({ where }),
+    ]);
+
+    return {
+      data: characters,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async deleteCharacter(id: string) {
+    const character = await this.prisma.character.findUnique({ where: { id } });
+    if (!character) throw new NotFoundException('Character not found');
+
+    await this.prisma.character.delete({ where: { id } });
+    return { message: 'Character deleted successfully' };
+  }
+
+  async updateCharacterVisibility(id: string, isPublic: boolean) {
+    const character = await this.prisma.character.update({
+      where: { id },
+      data: { isPublic },
+      select: { id: true, name: true, isPublic: true },
+    });
+    return character;
+  }
+
+  // ── Users ────────────────────────────────────
+
   async getUsers(params: {
     search?: string;
     role?: string;
