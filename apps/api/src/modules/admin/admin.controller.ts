@@ -150,4 +150,16 @@ export class AdminController {
   ) {
     return this.adminService.reviewModerationLog(id, action, req.user.id);
   }
+
+  // ── Transactions ────────────────────────────
+
+  @Get('transactions')
+  async getTransactions(
+    @Query('search') search?: string,
+    @Query('type') type?: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.adminService.getTransactions({ search, type, page, limit });
+  }
 }

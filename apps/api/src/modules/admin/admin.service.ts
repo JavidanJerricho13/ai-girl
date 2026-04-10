@@ -315,4 +315,55 @@ export class AdminService {
       data: { action, reviewedBy: reviewerId },
     });
   }
+
+  // ── Transactions ────────────────────────────
+
+  async getTransactions(params: {
+    search?: string;
+    type?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const page = params.page ?? 1;
+    const limit = params.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (params.type) {
+      where.type = params.type;
+    }
+
+    if (params.search) {
+      where.user = {
+        OR: [
+          { email: { contains: params.search, mode: 'insensitive' } },
+          { username: { contains: params.search, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    const [transactions, total] = await Promise.all([
+      this.prisma.transaction.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, email: true, username: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.transaction.count({ where }),
+    ]);
+
+    return {
+      data: transactions,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
 }

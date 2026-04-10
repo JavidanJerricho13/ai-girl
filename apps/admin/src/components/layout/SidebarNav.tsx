@@ -8,6 +8,7 @@ import {
   UserCog,
   ShieldCheck,
   BarChart3,
+  CreditCard,
   Settings,
   ExternalLink,
 } from 'lucide-react';
@@ -34,9 +35,10 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     ],
   },
   {
-    title: 'Analytics',
+    title: 'Monetization',
     items: [
-      { href: '/logs', label: 'Financial Logs', icon: BarChart3 },
+      { href: '/logs', label: 'Transactions', icon: BarChart3 },
+      { href: '/packages', label: 'Packages', icon: CreditCard },
     ],
   },
   {
