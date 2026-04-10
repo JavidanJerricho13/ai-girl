@@ -16,7 +16,12 @@ export type MainTabParamList = {
 
 export type MainStackParamList = {
   MainTabs: undefined;
-  Chat: { conversationId: string; characterId: string };
+  Chat: {
+    conversationId: string;
+    characterId?: string;
+    characterName?: string;
+    characterAvatar?: string;
+  };
   CharacterDetail: { characterId: string };
   VideoCall: { conversationId: string };
   Subscription: undefined;
