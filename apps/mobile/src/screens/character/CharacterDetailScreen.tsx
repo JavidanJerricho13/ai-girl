@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   Dimensions,
   Alert,
+  Share,
+  FlatList,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,7 +18,7 @@ import { apiService } from '../../services/api.service';
 import { ConversationData } from '../../components/ConversationItem';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const HERO_HEIGHT = SCREEN_WIDTH * 1.1;
+const HERO_HEIGHT = SCREEN_WIDTH * 1.15;
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -60,7 +62,33 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-// ─── Sub-components ──────────────────────────────────────
+function describeTraits(character: Character): string {
+  const traits: Array<[number, string, string]> = [
+    [character.shynessBold, 'shy', 'bold'],
+    [character.romanticPragmatic, 'romantic', 'pragmatic'],
+    [character.playfulSerious, 'playful', 'serious'],
+    [character.dominantSubmissive, 'dominant', 'submissive'],
+  ];
+
+  const descriptions = traits
+    .map(([val, left, right]) => {
+      if (val <= 20) return `very ${left}`;
+      if (val <= 40) return `somewhat ${left}`;
+      if (val <= 60) return null; // balanced, skip
+      if (val <= 80) return `somewhat ${right}`;
+      return `very ${right}`;
+    })
+    .filter(Boolean) as string[];
+
+  if (descriptions.length === 0) return 'A well-balanced personality across all traits.';
+
+  const formatted = descriptions.map(
+    (d) => d.charAt(0).toUpperCase() + d.slice(1),
+  );
+  return formatted.join(', ') + '.';
+}
+
+// ─── PersonalitySlider ──────────────────────────────────
 
 function PersonalitySlider({
   leftLabel,
@@ -80,7 +108,9 @@ function PersonalitySlider({
         <View style={[sliderStyles.fill, { width: `${pct}%` }]} />
         <View style={[sliderStyles.thumb, { left: `${pct}%` }]} />
       </View>
-      <Text style={sliderStyles.label}>{rightLabel}</Text>
+      <Text style={[sliderStyles.label, { textAlign: 'right' }]}>
+        {rightLabel}
+      </Text>
     </View>
   );
 }
@@ -126,6 +156,8 @@ const sliderStyles = StyleSheet.create({
   },
 });
 
+// ─── StatCard ────────────────────────────────────────────
+
 function StatCard({
   label,
   value,
@@ -158,27 +190,54 @@ const statStyles = StyleSheet.create({
   label: { fontSize: 11, color: '#9CA3AF' },
 });
 
-// ─── Gallery strip ───────────────────────────────────────
+// ─── Gallery strip (interactive) ─────────────────────────
 
-function GalleryStrip({ media }: { media: CharacterMedia[] }) {
-  const gallery = media.filter((m) => m.type === 'gallery').sort((a, b) => a.order - b.order);
-  if (gallery.length === 0) return null;
+function GalleryStrip({
+  media,
+  selectedId,
+  onSelect,
+}: {
+  media: CharacterMedia[];
+  selectedId: string | undefined;
+  onSelect: (item: CharacterMedia) => void;
+}) {
+  const allImages = media
+    .filter((m) => m.type === 'profile' || m.type === 'gallery')
+    .sort((a, b) => {
+      if (a.type === 'profile') return -1;
+      if (b.type === 'profile') return 1;
+      return a.order - b.order;
+    });
+
+  if (allImages.length <= 1) return null;
 
   return (
-    <ScrollView
+    <FlatList
       horizontal
+      data={allImages}
+      keyExtractor={(item) => item.id}
       showsHorizontalScrollIndicator={false}
       style={{ marginTop: 12 }}
       contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
-    >
-      {gallery.map((m) => (
-        <Image
-          key={m.id}
-          source={{ uri: m.thumbnailUrl || m.url }}
-          style={galleryStyles.thumb}
-        />
-      ))}
-    </ScrollView>
+      renderItem={({ item }) => {
+        const active = item.id === selectedId;
+        return (
+          <TouchableOpacity
+            onPress={() => onSelect(item)}
+            activeOpacity={0.8}
+            style={[
+              galleryStyles.thumb,
+              active && galleryStyles.thumbActive,
+            ]}
+          >
+            <Image
+              source={{ uri: item.thumbnailUrl || item.url }}
+              style={galleryStyles.thumbImage}
+            />
+          </TouchableOpacity>
+        );
+      }}
+    />
   );
 }
 
@@ -187,9 +246,65 @@ const galleryStyles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  thumbActive: {
+    borderColor: '#8B5CF6',
+  },
+  thumbImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
     backgroundColor: '#374151',
   },
 });
+
+// ─── Loading skeleton ────────────────────────────────────
+
+function DetailSkeleton() {
+  return (
+    <View style={styles.container}>
+      {/* Hero placeholder */}
+      <View style={[styles.heroImage, { backgroundColor: '#1F2937' }]} />
+
+      {/* Gallery strip skeleton */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: 20, marginTop: 12, gap: 8 }}>
+        {[1, 2, 3, 4].map((i) => (
+          <View key={i} style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: '#1F2937' }} />
+        ))}
+      </View>
+
+      <View style={styles.content}>
+        {/* Name */}
+        <View style={{ height: 28, width: '60%', backgroundColor: '#1F2937', borderRadius: 8, marginBottom: 16 }} />
+        {/* Description lines */}
+        <View style={{ height: 14, width: '100%', backgroundColor: '#1F2937', borderRadius: 6, marginBottom: 8 }} />
+        <View style={{ height: 14, width: '85%', backgroundColor: '#1F2937', borderRadius: 6, marginBottom: 8 }} />
+        <View style={{ height: 14, width: '70%', backgroundColor: '#1F2937', borderRadius: 6, marginBottom: 20 }} />
+
+        {/* Category chips */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
+          {[80, 60, 70].map((w, i) => (
+            <View key={i} style={{ height: 28, width: w, backgroundColor: '#1F2937', borderRadius: 14 }} />
+          ))}
+        </View>
+
+        {/* Stats */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
+          {[1, 2, 3].map((i) => (
+            <View key={i} style={{ flex: 1, height: 72, backgroundColor: '#1F2937', borderRadius: 12 }} />
+          ))}
+        </View>
+
+        {/* Personality */}
+        <View style={{ height: 16, width: 100, backgroundColor: '#1F2937', borderRadius: 6, marginBottom: 16 }} />
+        <View style={{ backgroundColor: '#1F2937', borderRadius: 14, padding: 16, height: 140 }} />
+      </View>
+    </View>
+  );
+}
 
 // ─── Main screen ─────────────────────────────────────────
 
@@ -199,6 +314,7 @@ export default function CharacterDetailScreen() {
   const { characterId } = route.params as RouteParams;
   const queryClient = useQueryClient();
   const [isStarting, setIsStarting] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<CharacterMedia | null>(null);
 
   const {
     data: character,
@@ -215,7 +331,6 @@ export default function CharacterDetailScreen() {
     setIsStarting(true);
 
     try {
-      // Check for existing conversation with this character
       const conversations: ConversationData[] =
         queryClient.getQueryData(['conversations']) ??
         (await apiService.getConversations());
@@ -245,7 +360,7 @@ export default function CharacterDetailScreen() {
           characterAvatar: profileUrl,
         });
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Could not start a conversation. Please try again.');
     } finally {
       setIsStarting(false);
@@ -256,50 +371,85 @@ export default function CharacterDetailScreen() {
     Alert.alert('Coming Soon', 'Video calls will be available soon.');
   }, []);
 
+  const handleShare = useCallback(async () => {
+    if (!character) return;
+    try {
+      await Share.share({
+        message: `Check out ${character.displayName || character.name} on Ethereal!`,
+      });
+    } catch {
+      // user cancelled
+    }
+  }, [character]);
+
   // ── Loading ──
-  if (isLoading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
-      </View>
-    );
-  }
+  if (isLoading) return <DetailSkeleton />;
 
   // ── Error ──
   if (isError || !character) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorIcon}>!</Text>
-        <Text style={styles.errorTitle}>Failed to load character</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()}>
-          <Text style={styles.retryBtnText}>Try Again</Text>
+        <TouchableOpacity
+          style={[styles.backButton, { top: 50 }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
+        <Text style={styles.errorIconText}>!</Text>
+        <Text style={styles.errorTitle}>Character not found</Text>
+        <Text style={styles.errorSubtitle}>
+          This character may have been removed or is unavailable.
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <TouchableOpacity
+            style={styles.retryBtn}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.retryBtnText}>Go Back</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.retryBtn, { backgroundColor: '#8B5CF6' }]}
+            onPress={() => refetch()}
+          >
+            <Text style={styles.retryBtnText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   const profileImage = character.media.find((m) => m.type === 'profile');
+  const heroImage = selectedMedia || profileImage;
 
   return (
     <View style={styles.container}>
-      {/* Back button (floating) */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.backIcon}>←</Text>
-      </TouchableOpacity>
+      {/* Floating header buttons */}
+      <View style={styles.floatingHeader}>
+        <TouchableOpacity
+          style={styles.floatingBtn}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.floatingBtn}
+          onPress={handleShare}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.shareIcon}>↗</Text>
+        </TouchableOpacity>
+      </View>
 
       <ScrollView
-        style={styles.container}
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero image */}
-        {profileImage ? (
+        {heroImage ? (
           <Image
-            source={{ uri: profileImage.url }}
+            source={{ uri: heroImage.url }}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -311,12 +461,16 @@ export default function CharacterDetailScreen() {
           </View>
         )}
 
-        {/* Gallery strip */}
-        <GalleryStrip media={character.media} />
+        {/* Interactive gallery strip */}
+        <GalleryStrip
+          media={character.media}
+          selectedId={heroImage?.id}
+          onSelect={setSelectedMedia}
+        />
 
         {/* Content */}
         <View style={styles.content}>
-          {/* Name row */}
+          {/* Name + badges */}
           <View style={styles.nameRow}>
             <Text style={styles.displayName}>
               {character.displayName || character.name}
@@ -326,7 +480,19 @@ export default function CharacterDetailScreen() {
                 <Text style={styles.premiumText}>★ Premium</Text>
               </View>
             )}
+            {character.isOfficial && (
+              <View style={styles.officialBadge}>
+                <Text style={styles.officialText}>✓ Official</Text>
+              </View>
+            )}
           </View>
+
+          {/* Creator */}
+          {character.creator?.username && (
+            <Text style={styles.creatorText}>
+              by @{character.creator.username}
+            </Text>
+          )}
 
           {/* Description */}
           <Text style={styles.description}>{character.description}</Text>
@@ -399,6 +565,10 @@ export default function CharacterDetailScreen() {
               rightLabel="Submissive"
               value={character.dominantSubmissive}
             />
+            <View style={styles.previewDivider} />
+            <Text style={styles.previewText}>
+              {describeTraits(character)}
+            </Text>
           </View>
 
           {/* Action buttons */}
@@ -411,7 +581,7 @@ export default function CharacterDetailScreen() {
             {isStarting ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.primaryButtonText}>Start Chatting</Text>
+              <Text style={styles.primaryButtonText}>💬  Start Chatting</Text>
             )}
           </TouchableOpacity>
 
@@ -420,7 +590,7 @@ export default function CharacterDetailScreen() {
             onPress={handleVideoCall}
             activeOpacity={0.7}
           >
-            <Text style={styles.secondaryButtonText}>Video Call</Text>
+            <Text style={styles.secondaryButtonText}>📹  Video Call</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -435,6 +605,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#111827',
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
     paddingBottom: 40,
   },
@@ -446,10 +619,27 @@ const styles = StyleSheet.create({
     padding: 40,
   },
 
-  // Back button
-  backButton: {
+  // Floating header
+  floatingHeader: {
     position: 'absolute',
     top: 50,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  floatingBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
     left: 16,
     zIndex: 10,
     width: 40,
@@ -460,6 +650,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backIcon: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  shareIcon: {
     color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '600',
@@ -492,7 +687,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 12,
+    marginBottom: 4,
   },
   displayName: {
     fontSize: 28,
@@ -509,6 +704,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#FCD34D',
+  },
+  officialBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+  },
+  officialText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#93C5FD',
+  },
+  creatorText: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 12,
   },
   description: {
     fontSize: 15,
@@ -551,9 +762,11 @@ const styles = StyleSheet.create({
 
   // Personality
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#D1D5DB',
+    color: '#9CA3AF',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
     marginBottom: 14,
     marginTop: 8,
   },
@@ -562,6 +775,18 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
     marginBottom: 24,
+  },
+  previewDivider: {
+    height: 1,
+    backgroundColor: '#374151',
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  previewText: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    color: '#6B7280',
+    lineHeight: 18,
   },
 
   // Buttons
@@ -592,7 +817,7 @@ const styles = StyleSheet.create({
   },
 
   // Error
-  errorIcon: {
+  errorIconText: {
     fontSize: 32,
     fontWeight: '700',
     color: '#EF4444',
@@ -606,10 +831,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   errorTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#F3F4F6',
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+  errorSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
   },
   retryBtn: {
     paddingHorizontal: 24,
