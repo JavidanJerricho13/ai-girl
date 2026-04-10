@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Users,
   UserCog,
+  ShieldCheck,
   BarChart3,
   Settings,
   ExternalLink,
@@ -29,6 +30,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { href: '/characters', label: 'Characters', icon: Users },
       { href: '/users', label: 'Users', icon: UserCog },
+      { href: '/moderation', label: 'Moderation', icon: ShieldCheck },
     ],
   },
   {

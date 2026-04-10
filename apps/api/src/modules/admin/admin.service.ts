@@ -270,4 +270,49 @@ export class AdminService {
 
     return { id, credits: newBalance };
   }
+
+  // ── Moderation ────────────────────────────────
+
+  async getModerationLogs(params: {
+    page?: number;
+    limit?: number;
+    isViolation?: boolean;
+  }) {
+    const page = params.page ?? 1;
+    const limit = params.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (params.isViolation !== undefined) {
+      where.isViolation = params.isViolation;
+    }
+
+    const [logs, total] = await Promise.all([
+      this.prisma.moderationLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.moderationLog.count({ where }),
+    ]);
+
+    return {
+      data: logs,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async reviewModerationLog(id: string, action: string, reviewerId: string) {
+    const log = await this.prisma.moderationLog.findUnique({ where: { id } });
+    if (!log) throw new NotFoundException('Moderation log not found');
+
+    return this.prisma.moderationLog.update({
+      where: { id },
+      data: { action, reviewedBy: reviewerId },
+    });
+  }
 }

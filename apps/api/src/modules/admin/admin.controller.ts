@@ -126,4 +126,28 @@ export class AdminController {
   ) {
     return this.adminService.addCredits(id, amount, description);
   }
+
+  // ── Moderation ──────────────────────────────
+
+  @Get('moderation/logs')
+  async getModerationLogs(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('isViolation') isViolation?: string,
+  ) {
+    return this.adminService.getModerationLogs({
+      page,
+      limit,
+      isViolation: isViolation === 'true' ? true : isViolation === 'false' ? false : undefined,
+    });
+  }
+
+  @Patch('moderation/logs/:id')
+  async reviewModerationLog(
+    @Param('id') id: string,
+    @Body('action') action: string,
+    @Request() req,
+  ) {
+    return this.adminService.reviewModerationLog(id, action, req.user.id);
+  }
 }

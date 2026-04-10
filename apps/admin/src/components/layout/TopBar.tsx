@@ -8,6 +8,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/characters': 'Characters',
   '/users': 'Users',
+  '/moderation': 'Moderation',
   '/logs': 'Financial Logs',
   '/settings': 'Settings',
 };
