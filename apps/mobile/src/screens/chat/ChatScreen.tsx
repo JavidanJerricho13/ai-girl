@@ -20,6 +20,7 @@ import { websocketService, Message } from '../../services/websocket.service';
 import { apiService } from '../../services/api.service';
 import { MessageSkeleton } from '../../components/LoadingSkeleton';
 import { AnimatedCreditBadge } from '../../components/AnimatedCreditBadge';
+import { ImageViewer, ImageViewerData } from '../../components/media/ImageViewer';
 
 interface RouteParams {
   conversationId: string;
@@ -41,6 +42,7 @@ export default function ChatScreen() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [sound, setSound] = useState<AudioPlayer | null>(null);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [imageViewerData, setImageViewerData] = useState<ImageViewerData | null>(null);
   
   const flatListRef = useRef<FlatList>(null);
   const conversationMessages = messages[conversationId] || [];
@@ -215,11 +217,22 @@ export default function ChatScreen() {
         
         <View style={[styles.messageBubble, isUser ? styles.userBubble : styles.aiBubble]}>
           {item.imageUrl && (
-            <Image
-              source={{ uri: item.imageUrl }}
-              style={styles.messageImage}
-              resizeMode="cover"
-            />
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() =>
+                setImageViewerData({
+                  uri: item.imageUrl!,
+                  prompt: item.content || undefined,
+                  date: item.createdAt,
+                })
+              }
+            >
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={styles.messageImage}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
           )}
           
           {item.content && (
@@ -310,6 +323,7 @@ export default function ChatScreen() {
   }
 
   return (
+    <>
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -372,6 +386,13 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+
+    <ImageViewer
+      data={imageViewerData}
+      visible={!!imageViewerData}
+      onClose={() => setImageViewerData(null)}
+    />
+    </>
   );
 }
 

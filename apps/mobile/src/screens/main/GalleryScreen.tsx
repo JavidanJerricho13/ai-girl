@@ -16,6 +16,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiService } from '../../services/api.service';
+import { ImageViewer, ImageViewerData } from '../../components/media/ImageViewer';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_SIZE = (SCREEN_WIDTH - 48) / 2;
@@ -352,6 +353,19 @@ export default function GalleryScreen() {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<TabFilter>('All');
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+  const [imageViewerData, setImageViewerData] = useState<ImageViewerData | null>(null);
+
+  const handleItemPress = useCallback((item: GalleryItem) => {
+    if (item.type === 'image' && item.resultUrl) {
+      setImageViewerData({
+        uri: item.resultUrl,
+        prompt: item.prompt ?? undefined,
+        date: item.createdAt,
+      });
+    } else {
+      setSelectedItem(item);
+    }
+  }, []);
 
   const typeFilter =
     activeTab === 'Images' ? 'image' : activeTab === 'Audio' ? 'voice' : undefined;
@@ -398,9 +412,9 @@ export default function GalleryScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: GalleryItem }) => (
-      <GalleryCard item={item} onPress={setSelectedItem} />
+      <GalleryCard item={item} onPress={handleItemPress} />
     ),
-    [],
+    [handleItemPress],
   );
 
   const renderFooter = () => {
@@ -509,11 +523,18 @@ export default function GalleryScreen() {
         />
       )}
 
-      {/* Detail modal */}
+      {/* Voice detail modal */}
       <MediaDetailModal
         item={selectedItem}
         visible={!!selectedItem}
         onClose={() => setSelectedItem(null)}
+      />
+
+      {/* Image viewer with gestures */}
+      <ImageViewer
+        data={imageViewerData}
+        visible={!!imageViewerData}
+        onClose={() => setImageViewerData(null)}
       />
     </View>
   );
