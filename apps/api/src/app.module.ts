@@ -9,6 +9,7 @@ import { MemoryModule } from './modules/memory/memory.module';
 import { MediaModule } from './modules/media/media.module';
 import { CreditsModule } from './modules/credits/credits.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     MediaModule,
     CreditsModule,
     PaymentsModule,
+    AdminModule,
   ],
   controllers: [HealthController],
   providers: [],
