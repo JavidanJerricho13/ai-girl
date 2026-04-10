@@ -11,6 +11,7 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Discover: undefined;
   Conversations: undefined;
+  Gallery: undefined;
   Profile: undefined;
 };
 

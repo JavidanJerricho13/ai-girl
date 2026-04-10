@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from './types';
 import DiscoverScreen from '../screens/main/DiscoverScreen';
 import ConversationsScreen from '../screens/main/ConversationsScreen';
+import GalleryScreen from '../screens/main/GalleryScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -39,6 +40,16 @@ export function MainTabNavigator() {
         component={ConversationsScreen}
         options={{
           tabBarLabel: 'Chats',
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Gallery"
+        component={GalleryScreen}
+        options={{
+          tabBarLabel: 'Gallery',
           tabBarIcon: ({ color, size }) => (
             <TabIcon color={color} size={size} />
           ),
