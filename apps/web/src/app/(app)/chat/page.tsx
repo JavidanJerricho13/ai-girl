@@ -5,9 +5,10 @@ import { io, Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { ConversationList } from '@/components/chat/ConversationList';
+import { CharacterPickerModal } from '@/components/chat/CharacterPickerModal';
 import { useAuthStore } from '@/store/auth.store';
 import apiClient from '@/lib/api-client';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Plus } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -36,6 +37,7 @@ export default function ChatPage() {
   >(null);
   const [activeCharacter, setActiveCharacter] =
     useState<ActiveCharacter | null>(null);
+  const [showCharacterPicker, setShowCharacterPicker] = useState(false);
   const currentAssistantMessage = useRef('');
 
   useEffect(() => {
@@ -135,42 +137,47 @@ export default function ChatPage() {
     [socket],
   );
 
-  const handleNewConversation = useCallback(async () => {
-    try {
-      const res = await apiClient.get('/characters');
-      const characters = res.data?.data ?? res.data ?? [];
-      if (!characters.length) {
-        alert('No characters available.');
-        return;
+  const handleOpenCharacterPicker = useCallback(() => {
+    setShowCharacterPicker(true);
+  }, []);
+
+  const handleCharacterSelected = useCallback(
+    async (character: {
+      id: string;
+      name: string;
+      displayName: string;
+      media: Array<{ url: string; type: string }>;
+    }) => {
+      setShowCharacterPicker(false);
+      try {
+        const convRes = await apiClient.post('/conversations', {
+          characterId: character.id,
+        });
+
+        const newConv = convRes.data;
+        const avatarUrl = character.media?.find(
+          (m) => m.type === 'profile',
+        )?.url;
+
+        setSelectedConversationId(newConv.id);
+        setActiveCharacter({
+          id: character.id,
+          name: character.name,
+          displayName: character.displayName || character.name,
+          avatarUrl,
+        });
+        setMessages([]);
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+
+        if (socket) {
+          socket.emit('join-conversation', { conversationId: newConv.id });
+        }
+      } catch {
+        alert('Failed to create conversation.');
       }
-
-      const char = characters[0];
-      const convRes = await apiClient.post('/conversations', {
-        characterId: char.id,
-      });
-
-      const newConv = convRes.data;
-      const avatarUrl = char.media?.find(
-        (m: any) => m.type === 'profile',
-      )?.url;
-
-      setSelectedConversationId(newConv.id);
-      setActiveCharacter({
-        id: char.id,
-        name: char.name,
-        displayName: char.displayName || char.name,
-        avatarUrl,
-      });
-      setMessages([]);
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-
-      if (socket) {
-        socket.emit('join-conversation', { conversationId: newConv.id });
-      }
-    } catch {
-      alert('Failed to create conversation.');
-    }
-  }, [socket, queryClient]);
+    },
+    [socket, queryClient],
+  );
 
   const handleSendMessage = useCallback(
     (content: string) => {
@@ -212,7 +219,7 @@ export default function ChatPage() {
       {/* Conversation sidebar */}
       <ConversationList
         onSelectConversation={handleSelectConversation}
-        onNewConversation={handleNewConversation}
+        onNewConversation={handleOpenCharacterPicker}
         selectedConversationId={selectedConversationId || undefined}
       />
 
@@ -237,13 +244,28 @@ export default function ChatPage() {
               <p className="text-lg text-gray-400 mb-1">
                 Select a conversation
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 mb-6">
                 Or start a new chat to begin
               </p>
+              <button
+                onClick={handleOpenCharacterPicker}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <Plus size={18} />
+                New Chat
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Character picker modal */}
+      {showCharacterPicker && (
+        <CharacterPickerModal
+          onSelect={handleCharacterSelected}
+          onClose={() => setShowCharacterPicker(false)}
+        />
+      )}
     </div>
   );
 }
