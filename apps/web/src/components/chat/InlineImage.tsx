@@ -1,14 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { ImageOff } from 'lucide-react';
+import { ImageOff, ZoomIn } from 'lucide-react';
 
 interface InlineImageProps {
   src: string;
   alt?: string;
+  onClick?: () => void;
 }
 
-export function InlineImage({ src, alt = 'Generated image' }: InlineImageProps) {
+export function InlineImage({
+  src,
+  alt = 'Generated image',
+  onClick,
+}: InlineImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
@@ -24,11 +29,10 @@ export function InlineImage({ src, alt = 'Generated image' }: InlineImageProps) 
   }
 
   return (
-    <a
-      href={src}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block relative cursor-pointer group"
+    <button
+      type="button"
+      onClick={onClick}
+      className="block relative cursor-pointer group w-full text-left"
     >
       {/* Skeleton */}
       {!loaded && (
@@ -41,15 +45,19 @@ export function InlineImage({ src, alt = 'Generated image' }: InlineImageProps) 
         loading="lazy"
         onLoad={() => setLoaded(true)}
         onError={() => setError(true)}
-        className={`rounded-xl max-h-80 w-full object-cover transition-opacity duration-300 group-hover:opacity-90 ${
+        className={`rounded-xl max-h-80 w-full object-cover transition-opacity duration-300 ${
           loaded ? 'opacity-100' : 'opacity-0 absolute inset-0'
         }`}
       />
 
       {/* Hover overlay */}
       {loaded && (
-        <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/10 transition-colors" />
+        <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity p-2 bg-black/50 rounded-full">
+            <ZoomIn size={18} className="text-white" />
+          </div>
+        </div>
       )}
-    </a>
+    </button>
   );
 }
