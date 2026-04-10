@@ -32,6 +32,7 @@ export default function AdminLoginPage() {
       login(userData, accessToken, refreshToken);
       router.push('/dashboard');
     } catch (err: any) {
+      console.error('[Admin Login] Error:', err?.response?.status, err?.response?.data);
       setError(
         err?.response?.data?.message || 'Invalid credentials. Please try again.',
       );

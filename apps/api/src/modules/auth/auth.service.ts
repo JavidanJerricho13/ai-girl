@@ -110,10 +110,13 @@ export class AuthService {
     });
 
     // Generate tokens
+    console.log(`[Auth] Generating tokens for ${user.email}...`);
     const tokens = await this.generateTokens(user.id, user.email);
+    console.log(`[Auth] Tokens generated successfully`);
 
     // Create session
     await this.createSession(user.id, tokens.accessToken, tokens.refreshToken);
+    console.log(`[Auth] Session created. Login complete for ${user.email}, role: ${(user as any).role}`);
 
     return {
       user: {
