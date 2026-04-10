@@ -2,17 +2,26 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
+import { AttachmentMenu } from './AttachmentMenu';
 
 interface MessageInputProps {
   onSend: (content: string) => void;
   disabled?: boolean;
+  userCredits: number;
+  onSelectImage: () => void;
+  onSelectVoice: () => void;
 }
 
-export function MessageInput({ onSend, disabled }: MessageInputProps) {
+export function MessageInput({
+  onSend,
+  disabled,
+  userCredits,
+  onSelectImage,
+  onSelectVoice,
+}: MessageInputProps) {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -41,6 +50,11 @@ export function MessageInput({ onSend, disabled }: MessageInputProps) {
       className="shrink-0 border-t border-gray-800 bg-gray-950/60 p-3"
     >
       <div className="flex items-end gap-2">
+        <AttachmentMenu
+          onSelectImage={onSelectImage}
+          onSelectVoice={onSelectVoice}
+          userCredits={userCredits}
+        />
         <textarea
           ref={textareaRef}
           value={input}

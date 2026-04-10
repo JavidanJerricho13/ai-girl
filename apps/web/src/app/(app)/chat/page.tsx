@@ -13,6 +13,8 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  imageUrl?: string;
+  audioUrl?: string;
 }
 
 interface ActiveCharacter {
@@ -191,6 +193,20 @@ export default function ChatPage() {
     [socket, isConnected, selectedConversationId, user],
   );
 
+  const handleMediaGenerated = useCallback(
+    (result: { type: 'image' | 'voice'; url?: string; jobId?: string }) => {
+      const msg: Message = {
+        id: `gen-${Date.now()}`,
+        role: 'assistant',
+        content: result.type === 'image' ? '🖼️ Generated image' : '🔊 Generated audio',
+        imageUrl: result.type === 'image' ? result.url : undefined,
+        audioUrl: result.type === 'voice' ? result.url : undefined,
+      };
+      setMessages((prev) => [...prev, msg]);
+    },
+    [],
+  );
+
   return (
     <div className="flex h-full -m-4 md:-m-6 bg-gray-900">
       {/* Conversation sidebar */}
@@ -207,6 +223,7 @@ export default function ChatPage() {
             messages={messages}
             isTyping={isTyping}
             onSendMessage={handleSendMessage}
+            onMediaGenerated={handleMediaGenerated}
             disabled={!isConnected || isTyping}
             character={activeCharacter}
           />

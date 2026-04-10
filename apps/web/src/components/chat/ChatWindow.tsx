@@ -1,14 +1,19 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Info } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
+import { GenerationModal } from './GenerationModal';
+import { useAuthStore } from '@/store/auth.store';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  imageUrl?: string;
+  audioUrl?: string;
 }
 
 interface ActiveCharacter {
@@ -18,10 +23,17 @@ interface ActiveCharacter {
   avatarUrl?: string;
 }
 
+type GenerationType = 'image' | 'voice';
+
 interface ChatWindowProps {
   messages: Message[];
   isTyping: boolean;
   onSendMessage: (content: string) => void;
+  onMediaGenerated?: (result: {
+    type: GenerationType;
+    url?: string;
+    jobId?: string;
+  }) => void;
   disabled?: boolean;
   character?: ActiveCharacter | null;
 }
@@ -30,12 +42,31 @@ export function ChatWindow({
   messages,
   isTyping,
   onSendMessage,
+  onMediaGenerated,
   disabled,
   character,
 }: ChatWindowProps) {
+  const { user, updateUser } = useAuthStore();
+  const [generationModal, setGenerationModal] = useState<GenerationType | null>(
+    null,
+  );
+
   const name = character
     ? character.displayName || character.name
     : 'AI Assistant';
+
+  const credits = user?.credits ?? 0;
+
+  const handleGenerated = (result: {
+    type: GenerationType;
+    url?: string;
+    jobId?: string;
+  }) => {
+    // Deduct credits optimistically
+    const cost = result.type === 'image' ? 10 : 3;
+    updateUser({ credits: Math.max(0, credits - cost) });
+    onMediaGenerated?.(result);
+  };
 
   return (
     <div className="flex flex-col h-full bg-gray-900">
@@ -70,7 +101,25 @@ export function ChatWindow({
       </div>
 
       <MessageList messages={messages} isTyping={isTyping} />
-      <MessageInput onSend={onSendMessage} disabled={disabled} />
+
+      <MessageInput
+        onSend={onSendMessage}
+        disabled={disabled}
+        userCredits={credits}
+        onSelectImage={() => setGenerationModal('image')}
+        onSelectVoice={() => setGenerationModal('voice')}
+      />
+
+      {/* Generation modal */}
+      {generationModal && character && (
+        <GenerationModal
+          type={generationModal}
+          characterId={character.id}
+          userCredits={credits}
+          onClose={() => setGenerationModal(null)}
+          onGenerated={handleGenerated}
+        />
+      )}
     </div>
   );
 }
