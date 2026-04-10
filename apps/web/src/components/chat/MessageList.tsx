@@ -3,6 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { TypingIndicator } from './TypingIndicator';
+import { InlineImage } from './InlineImage';
+import { AudioPlayer } from './AudioPlayer';
 
 interface Message {
   id: string;
@@ -19,6 +21,13 @@ interface MessageListProps {
 
 function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === 'user';
+  const hasText = !!message.content;
+  const hasImage = !!message.imageUrl;
+  const hasAudio = !!message.audioUrl;
+  const hasMedia = hasImage || hasAudio;
+
+  // Media-only messages get different padding
+  const mediaOnly = hasMedia && !hasText;
 
   return (
     <motion.div
@@ -28,44 +37,38 @@ function MessageBubble({ message }: { message: Message }) {
       className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
     >
       <div
-        className={`max-w-[75%] text-sm leading-relaxed ${
+        className={`max-w-[75%] text-sm leading-relaxed overflow-hidden ${
           isUser
-            ? 'bg-purple-600 text-white rounded-2xl rounded-br-md px-4 py-2.5'
-            : 'bg-gray-800 text-gray-200 rounded-2xl rounded-bl-md border border-gray-700/50 px-4 py-2.5'
+            ? `bg-purple-600 text-white rounded-2xl rounded-br-md ${
+                mediaOnly ? 'p-1.5' : 'px-4 py-2.5'
+              }`
+            : `bg-gray-800 text-gray-200 rounded-2xl rounded-bl-md border border-gray-700/50 ${
+                mediaOnly ? 'p-1.5' : 'px-4 py-2.5'
+              }`
         }`}
       >
-        {/* Text content */}
-        {message.content && (
-          <p className="whitespace-pre-wrap break-words">{message.content}</p>
-        )}
-
-        {/* Generated image */}
-        {message.imageUrl && (
-          <div className={message.content ? 'mt-2' : ''}>
-            <a
-              href={message.imageUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <img
-                src={message.imageUrl}
-                alt="Generated image"
-                className="rounded-lg max-w-full max-h-64 object-contain"
-              />
-            </a>
+        {/* Image */}
+        {hasImage && (
+          <div className={hasText ? 'mb-2' : ''}>
+            <InlineImage src={message.imageUrl!} />
           </div>
         )}
 
-        {/* Generated audio */}
-        {message.audioUrl && (
-          <div className={message.content ? 'mt-2' : ''}>
-            <audio
-              controls
-              src={message.audioUrl}
-              className="max-w-full h-8"
-              style={{ filter: 'invert(1) hue-rotate(180deg)' }}
-            />
+        {/* Text */}
+        {hasText && (
+          <p
+            className={`whitespace-pre-wrap break-words ${
+              mediaOnly ? '' : ''
+            } ${hasImage ? 'px-2.5 pb-1' : ''}`}
+          >
+            {message.content}
+          </p>
+        )}
+
+        {/* Audio */}
+        {hasAudio && (
+          <div className={hasText ? 'mt-2' : 'p-1.5'}>
+            <AudioPlayer src={message.audioUrl!} />
           </div>
         )}
       </div>
