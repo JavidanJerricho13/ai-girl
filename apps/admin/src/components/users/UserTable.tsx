@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   MoreHorizontal,
   Shield,
@@ -291,9 +292,12 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-zinc-200 truncate">
+                      <Link
+                        href={`/users/${user.id}`}
+                        className="text-sm font-medium text-zinc-200 truncate block hover:text-indigo-400 transition-colors"
+                      >
                         {name}
-                      </p>
+                      </Link>
                       <p className="text-xs text-zinc-500 truncate">
                         {user.email}
                       </p>

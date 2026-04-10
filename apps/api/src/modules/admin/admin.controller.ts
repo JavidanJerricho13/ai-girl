@@ -91,6 +91,11 @@ export class AdminController {
     return this.adminService.getUsers({ search, role, page, limit });
   }
 
+  @Get('users/:id')
+  async getUser(@Param('id') id: string) {
+    return this.adminService.getUser(id);
+  }
+
   @Patch('users/:id/role')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)

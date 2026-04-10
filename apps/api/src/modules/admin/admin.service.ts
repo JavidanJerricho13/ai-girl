@@ -118,6 +118,50 @@ export class AdminService {
 
   // ── Users ────────────────────────────────────
 
+  async getUser(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        bio: true,
+        role: true,
+        credits: true,
+        isPremium: true,
+        premiumUntil: true,
+        isActive: true,
+        isVerified: true,
+        language: true,
+        nsfwEnabled: true,
+        createdAt: true,
+        lastLoginAt: true,
+        _count: {
+          select: {
+            conversations: true,
+            messages: true,
+            characters: true,
+            transactions: true,
+          },
+        },
+      },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    // Get recent transactions
+    const transactions = await this.prisma.transaction.findMany({
+      where: { userId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 15,
+    });
+
+    return { ...user, recentTransactions: transactions };
+  }
+
   async getUsers(params: {
     search?: string;
     role?: string;
