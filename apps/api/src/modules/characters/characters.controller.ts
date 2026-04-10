@@ -22,10 +22,11 @@ export class CharactersController {
   @Get()
   async findAll(
     @Query('category') category?: string,
+    @Query('search') search?: string,
     @Request() req?: any,
   ) {
     const userId = req?.user?.id;
-    return this.charactersService.findAll(userId, category);
+    return this.charactersService.findAll(userId, category, search);
   }
 
   @Get(':id')

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Dimensions,
+  TextInput,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { apiService } from '../../services/api.service';
@@ -16,7 +17,7 @@ import { CharacterCardSkeleton } from '../../components/LoadingSkeleton';
 import { AnimatedCreditBadge } from '../../components/AnimatedCreditBadge';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
+const CARD_WIDTH = (width - 48) / 2;
 
 interface Character {
   id: string;
@@ -28,6 +29,8 @@ interface Character {
   messageCount?: number;
 }
 
+const DEBOUNCE_MS = 300;
+
 export default function DiscoverScreen() {
   const navigation = useNavigation();
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -37,15 +40,29 @@ export default function DiscoverScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const LIMIT = 20;
   const categories = ['All', 'Anime', 'Celebrity', 'Game', 'Movie', 'Original'];
 
+  // Debounce search input
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+    }, DEBOUNCE_MS);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [searchInput]);
+
   const fetchCharacters = async (reset: boolean = false) => {
     if (isLoading || isLoadingMore) return;
-    
+
     const currentOffset = reset ? 0 : offset;
-    
+
     if (reset) {
       setIsLoading(true);
     } else {
@@ -63,17 +80,23 @@ export default function DiscoverScreen() {
         params.category = selectedCategory;
       }
 
-      const response = await apiService.getCharacters(params);
-      
-      if (reset) {
-        setCharacters(response.data || []);
-        setOffset(LIMIT);
-      } else {
-        setCharacters(prev => [...prev, ...(response.data || [])]);
-        setOffset(prev => prev + LIMIT);
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
       }
 
-      setHasMore((response.data || []).length === LIMIT);
+      const response = await apiService.getCharacters(params);
+
+      if (reset) {
+        setCharacters(response.data || response || []);
+        setOffset(LIMIT);
+      } else {
+        const newData = response.data || response || [];
+        setCharacters((prev) => [...prev, ...newData]);
+        setOffset((prev) => prev + LIMIT);
+      }
+
+      const resultData = response.data || response || [];
+      setHasMore(Array.isArray(resultData) && resultData.length === LIMIT);
     } catch (error) {
       console.error('Failed to fetch characters:', error);
     } finally {
@@ -85,13 +108,13 @@ export default function DiscoverScreen() {
 
   useEffect(() => {
     fetchCharacters(true);
-  }, [selectedCategory]);
+  }, [selectedCategory, debouncedSearch]);
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
     setOffset(0);
     fetchCharacters(true);
-  }, [selectedCategory]);
+  }, [selectedCategory, debouncedSearch]);
 
   const handleLoadMore = useCallback(() => {
     if (hasMore && !isLoadingMore && !isLoading) {
@@ -100,20 +123,34 @@ export default function DiscoverScreen() {
   }, [hasMore, isLoadingMore, isLoading, offset]);
 
   const handleCharacterPress = (character: Character) => {
-    (navigation as any).navigate('CharacterDetail', { characterId: character.id });
+    (navigation as any).navigate('CharacterDetail', {
+      characterId: character.id,
+    });
   };
 
   const renderCategory = (category: string, index: number) => {
-    const isSelected = selectedCategory === category || (category === 'All' && !selectedCategory);
-    
+    const isSelected =
+      selectedCategory === category ||
+      (category === 'All' && !selectedCategory);
+
     return (
       <TouchableOpacity
         key={index}
-        style={[styles.categoryChip, isSelected && styles.categoryChipSelected]}
-        onPress={() => setSelectedCategory(category === 'All' ? null : category)}
+        style={[
+          styles.categoryChip,
+          isSelected && styles.categoryChipSelected,
+        ]}
+        onPress={() =>
+          setSelectedCategory(category === 'All' ? null : category)
+        }
         activeOpacity={0.7}
       >
-        <Text style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>
+        <Text
+          style={[
+            styles.categoryText,
+            isSelected && styles.categoryTextSelected,
+          ]}
+        >
           {category}
         </Text>
       </TouchableOpacity>
@@ -164,9 +201,18 @@ export default function DiscoverScreen() {
     if (isLoading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyTitle}>No Characters Found</Text>
+        <Text style={styles.emptyIcon}>
+          {debouncedSearch ? '🔍' : '🧭'}
+        </Text>
+        <Text style={styles.emptyTitle}>
+          {debouncedSearch
+            ? `No characters found for "${debouncedSearch}"`
+            : 'No Characters Found'}
+        </Text>
         <Text style={styles.emptySubtitle}>
-          Try selecting a different category
+          {debouncedSearch
+            ? 'Try a different name or category.'
+            : 'Try selecting a different category.'}
         </Text>
       </View>
     );
@@ -174,6 +220,7 @@ export default function DiscoverScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerTitle}>Discover</Text>
@@ -181,9 +228,38 @@ export default function DiscoverScreen() {
             Find your perfect AI companion
           </Text>
         </View>
-        <AnimatedCreditBadge onPress={() => (navigation as any).navigate('Subscription')} />
+        <AnimatedCreditBadge
+          onPress={() => (navigation as any).navigate('Subscription')}
+        />
       </View>
 
+      {/* Search bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputWrapper}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search characters..."
+            placeholderTextColor="#9CA3AF"
+            value={searchInput}
+            onChangeText={setSearchInput}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+          />
+          {searchInput !== '' && (
+            <TouchableOpacity
+              onPress={() => setSearchInput('')}
+              style={styles.clearButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.clearButtonText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Categories */}
       <View style={styles.categoriesContainer}>
         <FlatList
           horizontal
@@ -195,6 +271,7 @@ export default function DiscoverScreen() {
         />
       </View>
 
+      {/* Character grid */}
       {isLoading ? (
         <FlatList
           data={[1, 2, 3, 4, 5, 6]}
@@ -258,6 +335,49 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
   },
+
+  // Search
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 40,
+  },
+  searchIcon: {
+    fontSize: 14,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#1F2937',
+    paddingVertical: 0,
+  },
+  clearButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#D1D5DB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  clearButtonText: {
+    fontSize: 11,
+    color: '#4B5563',
+    fontWeight: '600',
+  },
+
+  // Categories
   categoriesContainer: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
@@ -285,6 +405,8 @@ const styles = StyleSheet.create({
   categoryTextSelected: {
     color: '#FFFFFF',
   },
+
+  // Grid
   gridContainer: {
     padding: 16,
   },
@@ -342,17 +464,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#6B7280',
-  },
   footerLoader: {
     paddingVertical: 20,
     alignItems: 'center',
@@ -362,15 +473,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 60,
+    paddingHorizontal: 32,
+  },
+  emptyIcon: {
+    fontSize: 40,
+    marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#1F2937',
     marginBottom: 8,
+    textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,
     color: '#6B7280',
+    textAlign: 'center',
   },
 });

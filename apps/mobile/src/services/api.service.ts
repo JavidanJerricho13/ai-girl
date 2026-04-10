@@ -2,9 +2,8 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration
-const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:3001/api' 
-  : 'https://api.ethereal.app/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL
+  ?? (__DEV__ ? 'http://localhost:3001/api' : 'https://api.ethereal.app/api');
 
 class ApiService {
   private client: AxiosInstance;
@@ -129,6 +128,7 @@ class ApiService {
 
   async getCharacters(params?: {
     category?: string;
+    search?: string;
     isPublic?: boolean;
     limit?: number;
     offset?: number;

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Compass, Search, Loader2 } from 'lucide-react';
+import { Compass, Search, X, Loader2 } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { CategoryChips, Category } from '@/components/character/CategoryChips';
 import { CharacterGrid } from '@/components/character/CharacterGrid';
@@ -10,13 +10,16 @@ import { CharacterGridSkeleton } from '@/components/character/CharacterCardSkele
 import { CharacterCardData } from '@/components/character/CharacterCard';
 
 const LIMIT = 20;
+const DEBOUNCE_MS = 300;
 
 async function fetchCharacters({
   category,
   offset,
+  search,
 }: {
   category: Category;
   offset: number;
+  search: string;
 }): Promise<CharacterCardData[]> {
   const params: Record<string, string | number | boolean> = {
     isPublic: true,
@@ -26,12 +29,29 @@ async function fetchCharacters({
   if (category !== 'All') {
     params.category = category;
   }
+  if (search.trim()) {
+    params.search = search.trim();
+  }
   const res = await apiClient.get('/characters', { params });
   return res.data?.data ?? res.data ?? [];
 }
 
+function useDebouncedValue(value: string, delay: number): string {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debounced;
+}
+
 export default function DiscoverPage() {
   const [category, setCategory] = useState<Category>('All');
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebouncedValue(searchInput, DEBOUNCE_MS);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const {
     data,
@@ -42,9 +62,9 @@ export default function DiscoverPage() {
     isFetchingNextPage,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ['characters', category],
+    queryKey: ['characters', category, debouncedSearch],
     queryFn: ({ pageParam = 0 }) =>
-      fetchCharacters({ category, offset: pageParam }),
+      fetchCharacters({ category, offset: pageParam, search: debouncedSearch }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.length < LIMIT) return undefined;
@@ -54,27 +74,45 @@ export default function DiscoverPage() {
 
   const characters = data?.pages.flat() ?? [];
 
+  const handleClearSearch = () => {
+    setSearchInput('');
+    inputRef.current?.focus();
+  };
+
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between mb-6 gap-4">
+        <div className="flex items-center gap-3 shrink-0">
           <Compass className="text-purple-400" size={28} />
           <h2 className="text-2xl font-semibold text-white">
             Discover Characters
           </h2>
         </div>
-        <div className="relative hidden sm:block">
+
+        {/* Search input */}
+        <div className="relative w-full max-w-xs">
           <Search
             size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
           />
           <input
+            ref={inputRef}
             type="text"
             placeholder="Search characters..."
-            disabled
-            className="pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-400 placeholder-gray-500 w-64 cursor-not-allowed opacity-50"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-full pl-10 pr-9 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/30 transition-colors"
           />
+          {searchInput && (
+            <button
+              onClick={handleClearSearch}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+              aria-label="Clear search"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -106,7 +144,10 @@ export default function DiscoverPage() {
         </div>
       ) : (
         <>
-          <CharacterGrid characters={characters} />
+          <CharacterGrid
+            characters={characters}
+            searchQuery={debouncedSearch}
+          />
 
           {/* Load More */}
           {hasNextPage && (

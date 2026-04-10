@@ -22,7 +22,7 @@ export class CharactersService {
     });
   }
 
-  async findAll(userId?: string, category?: string) {
+  async findAll(userId?: string, category?: string, search?: string) {
     const where: any = {
       OR: [
         { isPublic: true },
@@ -34,6 +34,18 @@ export class CharactersService {
       where.category = {
         has: category,
       };
+    }
+
+    if (search) {
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { displayName: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+          ],
+        },
+      ];
     }
 
     return this.prisma.character.findMany({
