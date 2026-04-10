@@ -26,4 +26,6 @@ export type MainStackParamList = {
   CharacterDetail: { characterId: string };
   VideoCall: { conversationId: string };
   Subscription: undefined;
+  EditProfile: undefined;
+  TransactionHistory: undefined;
 };

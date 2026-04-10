@@ -125,7 +125,11 @@ export default function ProfileScreen() {
       <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => (navigation as any).navigate('EditProfile')}
+          activeOpacity={0.7}
+        >
           <Text style={styles.menuIcon}>👤</Text>
           <Text style={styles.menuText}>Edit Profile</Text>
           <Text style={styles.menuArrow}>›</Text>
@@ -141,7 +145,11 @@ export default function ProfileScreen() {
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => (navigation as any).navigate('TransactionHistory')}
+          activeOpacity={0.7}
+        >
           <Text style={styles.menuIcon}>📊</Text>
           <Text style={styles.menuText}>Transaction History</Text>
           <Text style={styles.menuArrow}>›</Text>
