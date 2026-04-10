@@ -59,6 +59,46 @@ export class AdminService {
     };
   }
 
+  async getCharacter(id: string) {
+    const character = await this.prisma.character.findUnique({
+      where: { id },
+      include: {
+        media: true,
+        loraModels: true,
+        creator: { select: { id: true, username: true, email: true } },
+      },
+    });
+    if (!character) throw new NotFoundException('Character not found');
+    return character;
+  }
+
+  async createCharacter(userId: string, data: any) {
+    return this.prisma.character.create({
+      data: {
+        ...data,
+        createdBy: userId,
+      },
+      include: {
+        media: { where: { type: 'profile' }, take: 1 },
+      },
+    });
+  }
+
+  async updateCharacter(id: string, data: any) {
+    const character = await this.prisma.character.findUnique({ where: { id } });
+    if (!character) throw new NotFoundException('Character not found');
+
+    const { id: _id, createdBy, createdAt, updatedAt, media, loraModels, creator, ...updateData } = data;
+
+    return this.prisma.character.update({
+      where: { id },
+      data: updateData,
+      include: {
+        media: { where: { type: 'profile' }, take: 1 },
+      },
+    });
+  }
+
   async deleteCharacter(id: string) {
     const character = await this.prisma.character.findUnique({ where: { id } });
     if (!character) throw new NotFoundException('Character not found');

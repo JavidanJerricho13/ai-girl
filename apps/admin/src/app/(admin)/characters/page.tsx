@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 import {
   Users,
+  Plus,
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -150,6 +152,13 @@ export default function CharactersPage() {
             </p>
           </div>
         </div>
+        <Link
+          href="/characters/new"
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+        >
+          <Plus size={16} />
+          Create Character
+        </Link>
       </div>
 
       {/* Filters */}

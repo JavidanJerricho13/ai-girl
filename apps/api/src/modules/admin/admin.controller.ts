@@ -1,11 +1,13 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Delete,
   Param,
   Body,
   Query,
+  Request,
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
@@ -42,6 +44,24 @@ export class AdminController {
       page,
       limit,
     });
+  }
+
+  @Get('characters/:id')
+  async getCharacter(@Param('id') id: string) {
+    return this.adminService.getCharacter(id);
+  }
+
+  @Post('characters')
+  async createCharacter(@Request() req, @Body() data: any) {
+    return this.adminService.createCharacter(req.user.id, data);
+  }
+
+  @Patch('characters/:id')
+  async updateCharacter(
+    @Param('id') id: string,
+    @Body() data: any,
+  ) {
+    return this.adminService.updateCharacter(id, data);
   }
 
   @Delete('characters/:id')
