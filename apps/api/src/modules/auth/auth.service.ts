@@ -77,13 +77,24 @@ export class AuthService {
     });
 
     if (!user) {
+      console.log(`[Auth] Login failed: no user found for ${dto.email}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    console.log(`[Auth] User found: ${user.email}, hash starts with: ${user.passwordHash.substring(0, 10)}...`);
+
     // Verify password
-    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+    let isPasswordValid = false;
+    try {
+      isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+      console.log(`[Auth] bcrypt.compare result: ${isPasswordValid}`);
+    } catch (err) {
+      console.error(`[Auth] bcrypt.compare threw an error:`, err);
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     if (!isPasswordValid) {
+      console.log(`[Auth] Login failed: password mismatch for ${user.email}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -115,6 +126,7 @@ export class AuthService {
         credits: user.credits,
         isPremium: user.isPremium,
         language: user.language,
+        role: (user as any).role ?? 'USER',
       },
       ...tokens,
     };

@@ -1,19 +1,24 @@
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting database seeding...');
 
-  // Create test user
+  // Create test user (always re-hash password to fix potential corrupt hashes)
+  const hashedPassword = await bcrypt.hash('password123', 10);
+  console.log('Generated hash:', hashedPassword.substring(0, 20) + '...');
+
   const testUser = await prisma.user.upsert({
     where: { email: 'test@ethereal.app' },
-    update: {},
+    update: {
+      passwordHash: hashedPassword,
+    },
     create: {
       email: 'test@ethereal.app',
       username: 'testuser',
-      passwordHash: await bcrypt.hash('password123', 10),
+      passwordHash: hashedPassword,
       firstName: 'Test',
       lastName: 'User',
       credits: 1000,
