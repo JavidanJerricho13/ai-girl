@@ -2,6 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import { Menu } from 'lucide-react';
+import { useAuthStore } from '@/store/auth.store';
+import { CreditBadge } from '@/components/credits/CreditBadge';
 
 const PAGE_TITLES: Record<string, string> = {
   '/discover': 'Discover',
@@ -30,6 +32,7 @@ interface TopBarProps {
 export function TopBar({ onMenuToggle }: TopBarProps) {
   const pathname = usePathname();
   const title = getPageTitle(pathname);
+  const { user } = useAuthStore();
 
   return (
     <header className="h-16 shrink-0 bg-gray-950/80 backdrop-blur-sm border-b border-gray-800 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
@@ -45,9 +48,12 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         <h1 className="text-lg font-semibold text-white">{title}</h1>
       </div>
 
-      {/* Right: placeholder for CreditBadge / UserAvatar */}
+      {/* Right: Credit badge + avatar */}
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700" />
+        <CreditBadge credits={user?.credits ?? 0} />
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xs font-semibold">
+          {user?.username?.charAt(0).toUpperCase() ?? 'U'}
+        </div>
       </div>
     </header>
   );

@@ -1,34 +1,65 @@
 'use client';
 
-import { useAuthStore } from '@/store/auth.store';
+import { useQuery } from '@tanstack/react-query';
 import {
   Wallet,
   MessageSquare,
   ImageIcon,
   Mic,
-  ArrowDown,
-  ArrowUp,
+  Loader2,
 } from 'lucide-react';
+import apiClient from '@/lib/api-client';
+import { useAuthStore } from '@/store/auth.store';
+import {
+  TransactionList,
+  Transaction,
+} from '@/components/credits/TransactionList';
+import { PackageCard } from '@/components/credits/PackageCard';
+
+interface CreditsInfo {
+  credits: number;
+  isPremium: boolean;
+  premiumUntil: string | null;
+}
 
 const PACKAGES = [
   { credits: 500, price: '$4.99', label: 'Starter' },
-  { credits: 1200, price: '$9.99', label: 'Popular', highlight: true },
+  { credits: 1200, price: '$9.99', label: 'Most Popular', highlight: true },
   { credits: 2500, price: '$19.99', label: 'Best Value' },
-];
-
-const MOCK_TRANSACTIONS = [
-  { desc: 'Chat message', amount: -1, balance: 85, date: 'Today' },
-  { desc: 'Image generation', amount: -10, balance: 86, date: 'Today' },
-  { desc: 'Voice generation', amount: -3, balance: 96, date: 'Yesterday' },
-  { desc: 'Credit purchase', amount: 500, balance: 99, date: 'Yesterday' },
 ];
 
 export default function CreditsPage() {
   const { user } = useAuthStore();
 
+  const { data: creditsInfo, isLoading: creditsLoading } =
+    useQuery<CreditsInfo>({
+      queryKey: ['credits'],
+      queryFn: async () => {
+        const res = await apiClient.get('/users/credits');
+        return res.data;
+      },
+    });
+
+  const {
+    data: transactions,
+    isLoading: txLoading,
+    isError: txError,
+    refetch: txRefetch,
+  } = useQuery<Transaction[]>({
+    queryKey: ['transactions'],
+    queryFn: async () => {
+      const res = await apiClient.get('/users/transactions', {
+        params: { limit: 20 },
+      });
+      return res.data;
+    },
+  });
+
+  const credits = creditsInfo?.credits ?? user?.credits ?? 0;
+
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Balance header */}
+      {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <Wallet className="text-purple-400" size={28} />
         <h2 className="text-2xl font-semibold text-white">
@@ -37,13 +68,25 @@ export default function CreditsPage() {
       </div>
 
       {/* Balance card */}
-      <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-700/30 rounded-xl p-6 mb-8">
-        <p className="text-sm text-gray-300 mb-1">Current Balance</p>
-        <p className="text-4xl font-bold text-white">
-          {user?.credits ?? 0}{' '}
-          <span className="text-lg font-normal text-gray-400">credits</span>
-        </p>
-      </div>
+      {creditsLoading ? (
+        <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-700/30 rounded-xl p-6 mb-8">
+          <div className="h-4 w-24 bg-gray-700 rounded animate-pulse mb-2" />
+          <div className="h-10 w-40 bg-gray-700 rounded animate-pulse" />
+        </div>
+      ) : (
+        <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-700/30 rounded-xl p-6 mb-8">
+          <p className="text-sm text-gray-300 mb-1">Current Balance</p>
+          <p className="text-4xl font-bold text-white">
+            {credits.toLocaleString()}{' '}
+            <span className="text-lg font-normal text-gray-400">credits</span>
+          </p>
+          {creditsInfo?.isPremium && (
+            <div className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-yellow-400 bg-yellow-900/30 px-2 py-0.5 rounded">
+              ★ Premium Active
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Cost breakdown */}
       <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
@@ -68,70 +111,47 @@ export default function CreditsPage() {
       </div>
 
       {/* Packages */}
-      <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+      <h3
+        id="packages"
+        className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3"
+      >
         Credit Packages
       </h3>
       <div className="grid grid-cols-3 gap-3 mb-8">
         {PACKAGES.map((pkg) => (
-          <div
+          <PackageCard
             key={pkg.credits}
-            className={`rounded-xl p-5 text-center border ${
-              pkg.highlight
-                ? 'bg-purple-900/30 border-purple-600/50 ring-1 ring-purple-500/20'
-                : 'bg-gray-800/60 border-gray-700/50'
-            }`}
-          >
-            {pkg.highlight && (
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300 mb-2 block">
-                Most Popular
-              </span>
-            )}
-            <p className="text-2xl font-bold text-white">
-              {pkg.credits.toLocaleString()}
-            </p>
-            <p className="text-sm text-gray-400 mb-3">credits</p>
-            <button
-              disabled
-              className="w-full py-2 rounded-lg text-sm font-medium bg-purple-600/50 text-purple-200 cursor-not-allowed"
-            >
-              {pkg.price}
-            </button>
-          </div>
+            credits={pkg.credits}
+            price={pkg.price}
+            label={pkg.label}
+            highlight={pkg.highlight}
+          />
         ))}
       </div>
 
-      {/* Transactions */}
+      {/* Transaction history */}
       <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
         Recent Transactions
       </h3>
-      <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl divide-y divide-gray-700/40">
-        {MOCK_TRANSACTIONS.map((tx, i) => (
-          <div key={i} className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              {tx.amount > 0 ? (
-                <ArrowUp size={16} className="text-emerald-400" />
-              ) : (
-                <ArrowDown size={16} className="text-red-400" />
-              )}
-              <div>
-                <p className="text-sm text-gray-200">{tx.desc}</p>
-                <p className="text-xs text-gray-500">{tx.date}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p
-                className={`text-sm font-medium ${
-                  tx.amount > 0 ? 'text-emerald-400' : 'text-red-400'
-                }`}
-              >
-                {tx.amount > 0 ? '+' : ''}
-                {tx.amount}
-              </p>
-              <p className="text-xs text-gray-500">bal: {tx.balance}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      {txLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 size={20} className="animate-spin text-gray-500" />
+        </div>
+      ) : txError ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="text-sm text-gray-400 mb-3">
+            Failed to load transactions
+          </p>
+          <button
+            onClick={() => txRefetch()}
+            className="px-4 py-2 text-sm font-medium bg-gray-800 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : (
+        <TransactionList transactions={transactions ?? []} />
+      )}
     </div>
   );
 }
