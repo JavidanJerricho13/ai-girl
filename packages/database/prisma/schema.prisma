@@ -15,34 +15,41 @@ datasource db {
 // USER MANAGEMENT
 // ============================================
 
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
   username     String?   @unique
   passwordHash String
-  
+
   firstName String?
   lastName  String?
   avatar    String?
   bio       String?
-  
+  role      UserRole @default(USER)
+
   // Preferences
   language    String  @default("en") // en | az
   timezone    String  @default("Asia/Baku")
   nsfwEnabled Boolean @default(false)
-  
+
   // Credits & Subscription
   credits      Int       @default(100)
   isPremium    Boolean   @default(false)
   premiumUntil DateTime?
-  
+
   // Metadata
   isActive    Boolean   @default(true)
   isVerified  Boolean   @default(false)
   lastLoginAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  
+
   // Relations
   sessions      Session[]
   characters    Character[]
@@ -51,9 +58,10 @@ model User {
   transactions  Transaction[]
   subscriptions Subscription[]
   activities    UserActivity[]
-  
+
   @@index([email])
   @@index([username])
+  @@index([role])
 }
 
 model Session {

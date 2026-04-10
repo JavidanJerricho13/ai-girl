@@ -21,6 +21,7 @@ export class UsersService {
         credits: true,
         isPremium: true,
         premiumUntil: true,
+        role: true,
         createdAt: true,
         lastLoginAt: true,
       },
@@ -63,6 +64,7 @@ export class UsersService {
         timezone: true,
         credits: true,
         isPremium: true,
+        role: true,
       },
     });
   }
