@@ -6,7 +6,6 @@ import {
   MessageSquare,
   ImageIcon,
   Mic,
-  Loader2,
 } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
@@ -134,8 +133,22 @@ export default function CreditsPage() {
         Recent Transactions
       </h3>
       {txLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 size={20} className="animate-spin text-gray-500" />
+        <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl divide-y divide-gray-700/40">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-800 animate-pulse" />
+                <div className="space-y-1.5">
+                  <div className="h-3.5 w-32 bg-gray-800 rounded animate-pulse" />
+                  <div className="h-3 w-20 bg-gray-800/60 rounded animate-pulse" />
+                </div>
+              </div>
+              <div className="space-y-1.5 text-right">
+                <div className="h-3.5 w-12 bg-gray-800 rounded animate-pulse ml-auto" />
+                <div className="h-3 w-16 bg-gray-800/60 rounded animate-pulse ml-auto" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : txError ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">

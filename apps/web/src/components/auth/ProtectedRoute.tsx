@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 
 interface ProtectedRouteProps {
@@ -21,7 +22,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-white">Loading...</div>
+        <Loader2 size={28} className="animate-spin text-purple-500" />
       </div>
     );
   }

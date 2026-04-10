@@ -22,7 +22,11 @@ function getPageTitle(pathname: string): string {
   return 'Admin Panel';
 }
 
-export function TopBar() {
+interface TopBarProps {
+  onSearchClick?: () => void;
+}
+
+export function TopBar({ onSearchClick }: TopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const title = getPageTitle(pathname);
@@ -40,19 +44,17 @@ export function TopBar() {
         <h1 className="text-sm font-semibold text-white">{title}</h1>
       </div>
 
-      {/* Center: search */}
-      <div className="hidden md:block relative max-w-xs w-full mx-8">
-        <Search
-          size={15}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none"
-        />
-        <input
-          type="text"
-          placeholder="Search... (Cmd+K)"
-          disabled
-          className="w-full pl-9 pr-4 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-xs text-gray-400 placeholder-gray-600 cursor-not-allowed"
-        />
-      </div>
+      {/* Center: search trigger */}
+      <button
+        onClick={onSearchClick}
+        className="hidden md:flex items-center gap-2 max-w-xs w-full mx-8 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-500 hover:border-zinc-700 hover:text-zinc-400 transition-colors"
+      >
+        <Search size={14} />
+        <span className="flex-1 text-left">Search...</span>
+        <kbd className="text-[10px] text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded">
+          ⌘K
+        </kbd>
+      </button>
 
       {/* Right: admin info + logout */}
       <div className="flex items-center gap-3">
