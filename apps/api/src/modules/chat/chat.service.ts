@@ -28,6 +28,7 @@ export type ChatEvent =
   | { kind: 'typing'; durationMs: number }
   | { kind: 'text'; chunk: string }
   | { kind: 'media'; mediaType: 'image'; url: string; caption?: string }
+  | { kind: 'credits'; balance: number; delta: number }
   | { kind: 'complete' };
 
 // LLM tool schema. Keep descriptions user-facing-friendly — the model reads
@@ -111,18 +112,28 @@ export class ChatService {
     const startTime = Date.now();
 
     // 1. Credits first — fail fast before we pay the LLM latency tax.
+    let balanceAfterDeduction: number;
     try {
-      await this.creditsService.deductCredits({
+      const result = await this.creditsService.deductCredits({
         userId,
         amount: CHAT_MESSAGE_COST,
         description: 'Chat message',
         metadata: { conversationId, action: 'chat_message' },
       });
+      balanceAfterDeduction = result.newBalance;
     } catch (error: any) {
       throw new BadRequestException(
         error.message || 'Insufficient credits for chat message',
       );
     }
+
+    // Surface the new balance immediately so the header badge flashes in
+    // sync with the user's message bubble, before the LLM round-trip.
+    yield {
+      kind: 'credits',
+      balance: balanceAfterDeduction,
+      delta: -CHAT_MESSAGE_COST,
+    };
 
     // 2. Pull conversation + character (now includes active LoRA).
     const conversation = await this.conversationsService.findOne(conversationId, userId);

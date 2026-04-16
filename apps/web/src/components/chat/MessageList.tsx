@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Zap } from 'lucide-react';
 import { TypingIndicator } from './TypingIndicator';
 import { InlineImage } from './InlineImage';
 import { AudioPlayer } from './AudioPlayer';
@@ -18,6 +19,34 @@ interface Message {
   audioUrl?: string;
 }
 
+const COST_BADGE_DURATION_MS = 1200;
+
+function CostBadge({ cost }: { cost: number }) {
+  // Fire-and-forget: shows briefly on mount then fades away. Keeps the
+  // economy visible without cluttering the thread permanently.
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(false), COST_BADGE_DURATION_MS);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <AnimatePresence>
+      {visible ? (
+        <motion.span
+          initial={{ opacity: 0, y: 4, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.9 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-purple-500/15 border border-purple-400/40 text-purple-200 text-[10px] font-medium leading-none"
+          aria-label={`Cost: ${cost} credit${cost === 1 ? '' : 's'}`}
+        >
+          <Zap size={9} className="text-purple-300" />−{cost}
+        </motion.span>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
 interface MessageListProps {
   messages: Message[];
   isTyping: boolean;
@@ -26,9 +55,11 @@ interface MessageListProps {
 function MessageBubble({
   message,
   onImageClick,
+  showCost,
 }: {
   message: Message;
   onImageClick: (data: LightboxImageData) => void;
+  showCost: boolean;
 }) {
   const isUser = message.role === 'user';
   const hasText = !!message.content;
@@ -42,8 +73,12 @@ function MessageBubble({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+      className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}
     >
+      {/* Cost badge sits outside the bubble, to the left of user messages,
+          where it reads as metadata rather than content. */}
+      {isUser && showCost ? <CostBadge cost={1} /> : null}
+
       <div
         className={`max-w-[75%] text-sm leading-relaxed overflow-hidden ${
           isUser
@@ -98,6 +133,10 @@ export function MessageList({ messages, isTyping }: MessageListProps) {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
+  // Show the cost badge only on the *most recent* user message, so scrolling
+  // back through history doesn't flash a pulse of badges at the user.
+  const lastUserId = [...messages].reverse().find((m) => m.role === 'user')?.id;
+
   return (
     <>
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-3">
@@ -106,6 +145,7 @@ export function MessageList({ messages, isTyping }: MessageListProps) {
             key={message.id}
             message={message}
             onImageClick={setLightboxImage}
+            showCost={message.role === 'user' && message.id === lastUserId}
           />
         ))}
 

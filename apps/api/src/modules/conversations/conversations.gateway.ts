@@ -61,6 +61,15 @@ export class ConversationsGateway {
               caption: event.caption,
             });
             break;
+          case 'credits':
+            // Direct-emit to the originating client only. Credits are
+            // per-user, not per-conversation — broadcasting to the room
+            // would leak one user's balance to anyone else in it.
+            client.emit('credits-updated', {
+              balance: event.balance,
+              delta: event.delta,
+            });
+            break;
           case 'complete':
             room.emit('message-complete');
             break;

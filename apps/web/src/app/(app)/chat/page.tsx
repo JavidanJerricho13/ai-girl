@@ -26,7 +26,7 @@ interface ActiveCharacter {
 }
 
 export default function ChatPage() {
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const queryClient = useQueryClient();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -104,6 +104,19 @@ export default function ChatPage() {
             },
           ];
         });
+      },
+    );
+
+    // Authoritative balance from the server, emitted the moment the API
+    // debits the chat message. Overwrites the optimistic local state so the
+    // badge stays in sync even if the user has multiple tabs open.
+    newSocket.on(
+      'credits-updated',
+      (data: { balance: number; delta: number }) => {
+        updateUser({ credits: data.balance });
+        // Invalidate any React Query caches that surface credits (e.g. the
+        // /profile page) so they refetch with the fresh number.
+        queryClient.invalidateQueries({ queryKey: ['credits'] });
       },
     );
 

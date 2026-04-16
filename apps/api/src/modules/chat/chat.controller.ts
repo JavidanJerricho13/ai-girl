@@ -133,6 +133,9 @@ export class ChatController {
         else if (event.kind === 'media' && event.mediaType === 'image') {
           imageUrl = event.url;
         }
+        // typing / credits / complete events are ignored in the REST preview —
+        // the marketing page drives its own typing feel and guests don't
+        // see a real balance.
       }
     } catch (error: any) {
       if (error?.message?.toLowerCase?.().includes('insufficient credits')) {
