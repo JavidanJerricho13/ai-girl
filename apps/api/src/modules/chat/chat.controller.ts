@@ -6,13 +6,17 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  Param,
   Post,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 import type { Request } from 'express';
 import { PrismaService } from '../../common/services/prisma.service';
 import { GUEST_COOKIE_NAME } from '../auth/auth.cookies';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreditsService } from '../credits/credits.service';
 import { ChatService } from './chat.service';
 import { ConversationsService } from '../conversations/conversations.service';
 
@@ -39,6 +43,7 @@ export class ChatController {
     private readonly chatService: ChatService,
     private readonly conversationsService: ConversationsService,
     private readonly prisma: PrismaService,
+    private readonly credits: CreditsService,
   ) {}
 
   /**
@@ -156,6 +161,84 @@ export class ChatController {
       messagesUsed: userMessageCount + 1,
       messagesRemaining: Math.max(0, GUEST_MESSAGE_CAP - (userMessageCount + 1)),
       limit: GUEST_MESSAGE_CAP,
+    };
+  }
+
+  /**
+   * Free-tier unlock for a gated media message. Charges 1 credit, records
+   * the unlock in MessageUnlock (unique on [userId, messageId] so repeats
+   * are no-ops), returns the unlocked URLs. Premium users skip this —
+   * their messages are never isLocked in the first place.
+   */
+  @Post('messages/:id/unlock-media')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async unlockMedia(@Param('id') messageId: string, @Req() req: Request) {
+    const user = (req as any).user;
+
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: {
+        id: true,
+        conversationId: true,
+        imageUrl: true,
+        audioUrl: true,
+        ...({ isLocked: true } as any),
+        conversation: { select: { userId: true } },
+      } as any,
+    });
+
+    if (!message) throw new NotFoundException('Message not found');
+    const msg = message as any;
+    if (msg.conversation?.userId !== user.id) {
+      throw new ForbiddenException('Not your conversation');
+    }
+    if (!msg.isLocked) {
+      // Already free — idempotent success so clients that click twice
+      // (e.g. after an app resume) don't see errors.
+      return {
+        unlocked: true,
+        imageUrl: msg.imageUrl,
+        audioUrl: msg.audioUrl,
+        balance: user.credits,
+      };
+    }
+
+    // Short-circuit if the user already paid for this message previously.
+    const existing = await (this.prisma as any).messageUnlock.findUnique({
+      where: { userId_messageId: { userId: user.id, messageId } },
+    });
+    if (existing) {
+      return {
+        unlocked: true,
+        imageUrl: msg.imageUrl,
+        audioUrl: msg.audioUrl,
+        balance: user.credits,
+      };
+    }
+
+    // Deduct first (atomic balance check), then persist the unlock. If the
+    // unlock insert fails for any reason the credit is already gone — we
+    // accept that edge case in exchange for not double-charging on retries
+    // (the @@unique constraint makes the insert itself idempotent).
+    const { newBalance } = await this.credits.deductCredits({
+      userId: user.id,
+      amount: 1,
+      description: 'Unlock media message',
+      metadata: { messageId, conversationId: msg.conversationId },
+    });
+
+    await (this.prisma as any).messageUnlock.upsert({
+      where: { userId_messageId: { userId: user.id, messageId } },
+      create: { userId: user.id, messageId, creditsSpent: 1 },
+      update: {},
+    });
+
+    return {
+      unlocked: true,
+      imageUrl: msg.imageUrl,
+      audioUrl: msg.audioUrl,
+      balance: newBalance,
     };
   }
 

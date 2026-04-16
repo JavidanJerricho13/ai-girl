@@ -89,6 +89,23 @@ export class ConversationsService {
       throw new ForbiddenException('You do not have access to this conversation');
     }
 
+    // Collapse isLocked=false for any message this user has already unlocked
+    // via MessageUnlock. Without this, paid-for media would re-lock on every
+    // conversation reload — a terrible experience.
+    const lockedIds = conversation.messages
+      .filter((m: any) => m.isLocked)
+      .map((m) => m.id);
+    if (lockedIds.length) {
+      const unlocks = await (this.prisma as any).messageUnlock.findMany({
+        where: { userId, messageId: { in: lockedIds } },
+        select: { messageId: true },
+      });
+      const unlockedSet = new Set<string>(unlocks.map((u: any) => u.messageId));
+      conversation.messages = conversation.messages.map((m: any) =>
+        unlockedSet.has(m.id) ? { ...m, isLocked: false } : m,
+      );
+    }
+
     return conversation;
   }
 

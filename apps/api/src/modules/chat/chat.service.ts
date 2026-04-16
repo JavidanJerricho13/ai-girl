@@ -27,38 +27,46 @@ const CHAT_MESSAGE_COST = 1;
 export type ChatEvent =
   | { kind: 'typing'; durationMs: number }
   | { kind: 'text'; chunk: string }
-  | { kind: 'media'; mediaType: 'image'; url: string; caption?: string }
+  | {
+      kind: 'media';
+      mediaType: 'image' | 'voice';
+      url: string;
+      caption?: string;
+      messageId: string;
+      isLocked: boolean;
+    }
   | { kind: 'credits'; balance: number; delta: number }
   | { kind: 'complete' };
 
-// LLM tool schema. Keep descriptions user-facing-friendly — the model reads
-// them to decide *when* to call the tool.
-const SEND_PHOTO_TOOL: ToolDefinition = {
+// LLM tool schema. Unified photo/voice interface — the model picks the
+// appropriate medium for the moment. Tool description coaches the model
+// to be sparing: most turns should be text-only.
+const REQUEST_MEDIA_TOOL: ToolDefinition = {
   type: 'function',
   function: {
-    name: 'send_photo',
+    name: 'request_media',
     description:
-      "Send the user a photo of yourself. Use this when they ask to see you, ask for a picture or selfie, or when sharing a visual feels like the natural next beat of the conversation (e.g. you're describing where you are right now). Do NOT use it every turn — only when it genuinely fits.",
+      "Share a photo or voice note with the user. Use sparingly — only when they explicitly ask, when sharing a visual/audio is the natural next beat of the conversation, or when a moment genuinely calls for it. Most replies should be text only. Pick 'photo' for visual moments and 'voice' when warmth/intimacy of tone matters more than image.",
     parameters: {
       type: 'object',
       properties: {
-        mood: {
+        type: {
           type: 'string',
-          description:
-            'One emotional word: playful | sultry | cozy | dreamy | mischievous | tender | focused',
+          enum: ['photo', 'voice'],
+          description: "'photo' = a picture of yourself; 'voice' = a short audio note.",
         },
-        scene: {
+        description: {
           type: 'string',
           description:
-            'Short visual description of what the photo shows — lighting, setting, pose, outfit. One sentence.',
+            "For photo: short visual description (lighting, setting, pose, outfit) in one sentence. For voice: the exact script to speak aloud, max 40 words — written the way she actually talks, not formal.",
         },
         caption: {
           type: 'string',
           description:
-            'Optional short text message to send along with the photo. Keep it under 80 characters and in character.',
+            'Optional short text to send alongside the media. Under 80 characters, in character.',
         },
       },
-      required: ['mood', 'scene'],
+      required: ['type', 'description'],
     },
   },
 };
@@ -166,36 +174,37 @@ export class ChatService {
     yield { kind: 'typing', durationMs: thinkingMs };
     await sleep(thinkingMs);
 
-    // 6. One non-streaming LLM call with the send_photo tool available.
+    // 6. One non-streaming LLM call with the request_media tool available.
     const llm = await this.modelRouter.generateWithTools({
       prompt: content,
       systemPrompt,
-      tools: [SEND_PHOTO_TOOL],
+      tools: [REQUEST_MEDIA_TOOL],
     });
 
-    // 7. If the model wants a photo, kick off image generation in parallel
-    //    so the text can stream while the image is rendering (images take
-    //    several seconds; we'd rather not block the text on them).
-    const photoArgs = extractPhotoArgs(llm.toolCalls);
-    const photoPromise = photoArgs
-      ? this.chatMediaService
-          .generateForChat({
-            userId,
-            characterId: character.id,
-            scene: photoArgs.scene,
-            mood: photoArgs.mood,
-            nsfwAllowed: Boolean(conversation.nsfwEnabled),
-          })
-          .catch((err) => {
-            this.logger.error(`send_photo failed: ${err?.message}`);
-            return null;
-          })
+    // 7. Parse the tool call (if any) and kick off generation in parallel so
+    //    the text can stream while the media is rendering. Only the first
+    //    request_media call is honoured — stacking media per turn is noise.
+    const mediaArgs = extractMediaArgs(llm.toolCalls);
+    const isPremium = await this.isUserPremium(userId);
+
+    const mediaPromise = mediaArgs
+      ? this.runMediaTool({
+          type: mediaArgs.type,
+          description: mediaArgs.description,
+          userId,
+          characterId: character.id,
+          nsfwAllowed: Boolean(conversation.nsfwEnabled),
+          language: conversation.language as 'en' | 'az',
+        }).catch((err) => {
+          this.logger.error(`request_media failed: ${err?.message}`);
+          return null;
+        })
       : null;
 
     // 8. Emit the assistant's text as fake-streaming chunks. When the model
     //    only produced a tool call and no content, fall back to the tool's
     //    caption so the user isn't left staring at an empty bubble.
-    const textBody = (llm.content || photoArgs?.caption || '').trim();
+    const textBody = (llm.content || mediaArgs?.caption || '').trim();
     const chunks = chunkForTyping(textBody);
     let assembled = '';
     for (const chunk of chunks) {
@@ -204,37 +213,47 @@ export class ChatService {
       await sleep(computeChunkDelayMs());
     }
 
-    // 9. Wait for the photo if one was requested and emit it after the text.
-    let imageUrl: string | null = null;
-    if (photoPromise) {
-      const result = await photoPromise;
-      if (result) {
-        imageUrl = result.url;
-        yield {
-          kind: 'media',
-          mediaType: 'image',
-          url: result.url,
-          caption: photoArgs?.caption,
-        };
-      }
-    }
-
-    // 10. Persist the assistant message with (optional) imageUrl. We save
-    //     once — text and image share a single Message row so the /conversations
-    //     re-fetch renders the same shape as the live stream.
-    const language = (await this.modelRouter.detectLanguage(content)) === 'az' ? 'openai' : 'groq';
+    // 9. Persist the assistant message first, so the media event carries a
+    //    real messageId the frontend can reference when calling the unlock
+    //    endpoint. Media URLs are attached below once generation resolves.
+    const modelUsed = (await this.modelRouter.detectLanguage(content)) === 'az' ? 'openai' : 'groq';
     const latencyMs = Date.now() - startTime;
-    await this.prisma.message.create({
+    const assistantMessage = await this.prisma.message.create({
       data: {
         conversationId,
         role: 'assistant',
         content: assembled,
         language: conversation.language,
-        modelUsed: language,
+        modelUsed,
         latencyMs,
-        imageUrl: imageUrl ?? undefined,
       },
     });
+
+    // 10. Wait for the media (if requested), attach to the persisted message,
+    //     and emit the media event with messageId + isLocked so the client
+    //     can render the blurred-preview state for non-premium users.
+    if (mediaPromise) {
+      const result = await mediaPromise;
+      if (result) {
+        const isLocked = !isPremium;
+        await this.prisma.message.update({
+          where: { id: assistantMessage.id },
+          data: {
+            imageUrl: result.kind === 'image' ? result.url : undefined,
+            audioUrl: result.kind === 'voice' ? result.url : undefined,
+            ...({ isLocked } as any),
+          },
+        });
+        yield {
+          kind: 'media',
+          mediaType: result.kind === 'image' ? 'image' : 'voice',
+          url: result.url,
+          caption: mediaArgs?.caption,
+          messageId: assistantMessage.id,
+          isLocked,
+        };
+      }
+    }
 
     // 11. Housekeeping: conversation timestamp, character counters, memory summarization.
     await this.conversationsService.updateLastMessageTime(conversationId);
@@ -264,28 +283,68 @@ export class ChatService {
 
     // A lightweight behavioural guardrail — keeps short, conversational tone
     // (this is an emotional companion, not a knowledge assistant) and nudges
-    // the model to use the send_photo tool sparingly rather than every turn.
+    // the model to use request_media sparingly rather than every turn.
     parts.push(
       [
         'Write like a text conversation: short, warm, natural. No bulleted lists, no headings.',
-        'You have a tool called send_photo. Use it only when the user asks to see you or when a visual clearly belongs in the moment. Most replies should be text only.',
+        'You have a tool called request_media. Call it only when the user asks to see or hear you, or when a visual/voice clearly belongs in the moment. Most replies should be text only.',
       ].join(' '),
     );
 
     return parts.join('\n\n');
   }
+
+  private async isUserPremium(userId: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isPremium: true, premiumUntil: true },
+    });
+    if (!user?.isPremium) return false;
+    if (user.premiumUntil && user.premiumUntil < new Date()) return false;
+    return true;
+  }
+
+  private async runMediaTool(params: {
+    type: 'photo' | 'voice';
+    description: string;
+    userId: string;
+    characterId: string;
+    nsfwAllowed: boolean;
+    language: 'en' | 'az';
+  }): Promise<{ kind: 'image' | 'voice'; url: string } | null> {
+    if (params.type === 'photo') {
+      const result = await this.chatMediaService.generateForChat({
+        userId: params.userId,
+        characterId: params.characterId,
+        scene: params.description,
+        nsfwAllowed: params.nsfwAllowed,
+      });
+      return { kind: 'image', url: result.url };
+    }
+
+    // voice
+    const result = await this.chatMediaService.generateVoiceForChat({
+      userId: params.userId,
+      characterId: params.characterId,
+      script: params.description,
+      language: params.language,
+    });
+    return { kind: 'voice', url: result.url };
+  }
 }
 
-function extractPhotoArgs(
+function extractMediaArgs(
   toolCalls: { name: string; arguments: Record<string, any> }[],
-): { mood?: string; scene: string; caption?: string } | null {
-  const call = toolCalls.find((t) => t.name === 'send_photo');
+): { type: 'photo' | 'voice'; description: string; caption?: string } | null {
+  const call = toolCalls.find((t) => t.name === 'request_media');
   if (!call) return null;
-  const scene = typeof call.arguments.scene === 'string' ? call.arguments.scene : '';
-  if (!scene) return null;
+  const type = call.arguments.type === 'voice' ? 'voice' : 'photo';
+  const description =
+    typeof call.arguments.description === 'string' ? call.arguments.description : '';
+  if (!description) return null;
   return {
-    mood: typeof call.arguments.mood === 'string' ? call.arguments.mood : undefined,
-    scene,
+    type,
+    description,
     caption: typeof call.arguments.caption === 'string' ? call.arguments.caption : undefined,
   };
 }

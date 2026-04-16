@@ -7,6 +7,8 @@ import { ChatMediaService } from './services/chat-media.service';
 import { GroqService } from '../../integrations/groq/groq.service';
 import { OpenAIService } from '../../integrations/openai/openai.service';
 import { FalService } from '../../integrations/fal/fal.service';
+import { ElevenLabsService } from '../../integrations/elevenlabs/elevenlabs.service';
+import { AzureTtsService } from '../../integrations/azure-tts/azure-tts.service';
 import { PrismaService } from '../../common/services/prisma.service';
 import { StorageService } from '../../common/services/storage.service';
 import { MemoryModule } from '../memory/memory.module';
@@ -30,6 +32,8 @@ import { CreditsModule } from '../credits/credits.module';
     GroqService,
     OpenAIService,
     FalService,
+    ElevenLabsService,
+    AzureTtsService,
     StorageService,
     PrismaService,
   ],

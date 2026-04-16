@@ -16,6 +16,7 @@ interface Message {
   content: string;
   imageUrl?: string;
   audioUrl?: string;
+  isLocked?: boolean;
 }
 
 interface ActiveCharacter {
@@ -36,6 +37,7 @@ interface ChatWindowProps {
     url?: string;
     jobId?: string;
   }) => void;
+  onMediaUnlocked?: (messageId: string, payload: { imageUrl?: string; audioUrl?: string }) => void;
   disabled?: boolean;
   character?: ActiveCharacter | null;
 }
@@ -50,6 +52,7 @@ export function ChatWindow({
   isTyping,
   onSendMessage,
   onMediaGenerated,
+  onMediaUnlocked,
   disabled,
   character,
 }: ChatWindowProps) {
@@ -121,7 +124,11 @@ export function ChatWindow({
         <LowCreditsBanner credits={credits} />
       )}
 
-      <MessageList messages={messages} isTyping={isTyping} />
+      <MessageList
+        messages={messages}
+        isTyping={isTyping}
+        onMediaUnlocked={onMediaUnlocked}
+      />
 
       <MessageInput
         onSend={onSendMessage}

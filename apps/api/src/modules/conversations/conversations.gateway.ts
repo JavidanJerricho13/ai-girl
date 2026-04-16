@@ -73,6 +73,8 @@ export class ConversationsGateway implements OnGatewayInit {
               mediaType: event.mediaType,
               url: event.url,
               caption: event.caption,
+              messageId: event.messageId,
+              isLocked: event.isLocked,
             });
             break;
           case 'credits':

@@ -16,6 +16,7 @@ interface Message {
   content: string;
   imageUrl?: string;
   audioUrl?: string;
+  isLocked?: boolean;
 }
 
 interface ActiveCharacter {
@@ -78,29 +79,41 @@ export default function ChatPage() {
       });
     });
 
-    // Tool-call result from send_photo — patch the current assistant message
-    // with the generated imageUrl so the image renders in the same thread
-    // bubble as the text. Falls through to a fresh bubble if the assistant
-    // hasn't emitted any text (tool-only response).
+    // Tool-call result from request_media — patch the current assistant
+    // message with the generated URL + locked state so the gate renders
+    // for free-tier users and premium users get it straight away. Falls
+    // through to a fresh bubble if the assistant hasn't emitted any text.
     newSocket.on(
       'message-media',
-      (data: { mediaType: 'image'; url: string; caption?: string }) => {
-        if (data.mediaType !== 'image') return;
+      (data: {
+        mediaType: 'image' | 'voice';
+        url: string;
+        caption?: string;
+        messageId: string;
+        isLocked: boolean;
+      }) => {
         setMessages((prev) => {
           const newMessages = [...prev];
           const lastIndex = newMessages.length - 1;
           const last = newMessages[lastIndex];
+          const patch: Partial<Message> =
+            data.mediaType === 'image'
+              ? { imageUrl: data.url, isLocked: data.isLocked, id: data.messageId }
+              : { audioUrl: data.url, isLocked: data.isLocked, id: data.messageId };
+
           if (last && last.role === 'assistant') {
-            newMessages[lastIndex] = { ...last, imageUrl: data.url };
+            newMessages[lastIndex] = { ...last, ...patch };
             return newMessages;
           }
           return [
             ...newMessages,
             {
-              id: `media-${Date.now()}`,
+              id: data.messageId,
               role: 'assistant',
               content: data.caption ?? '',
-              imageUrl: data.url,
+              isLocked: data.isLocked,
+              imageUrl: data.mediaType === 'image' ? data.url : undefined,
+              audioUrl: data.mediaType === 'voice' ? data.url : undefined,
             },
           ];
         });
@@ -176,6 +189,7 @@ export default function ChatPage() {
             content: msg.content,
             imageUrl: msg.imageUrl ?? undefined,
             audioUrl: msg.audioUrl ?? undefined,
+            isLocked: Boolean(msg.isLocked),
           })),
         );
 
@@ -252,6 +266,24 @@ export default function ChatPage() {
     [socket, isConnected, selectedConversationId, user],
   );
 
+  const handleMediaUnlocked = useCallback(
+    (messageId: string, payload: { imageUrl?: string; audioUrl?: string }) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
+                isLocked: false,
+                imageUrl: payload.imageUrl ?? m.imageUrl,
+                audioUrl: payload.audioUrl ?? m.audioUrl,
+              }
+            : m,
+        ),
+      );
+    },
+    [],
+  );
+
   const handleMediaGenerated = useCallback(
     (result: { type: 'image' | 'voice'; url?: string; jobId?: string }) => {
       const msg: Message = {
@@ -283,6 +315,7 @@ export default function ChatPage() {
             isTyping={isTyping}
             onSendMessage={handleSendMessage}
             onMediaGenerated={handleMediaGenerated}
+            onMediaUnlocked={handleMediaUnlocked}
             disabled={!isConnected || isTyping}
             character={activeCharacter}
           />

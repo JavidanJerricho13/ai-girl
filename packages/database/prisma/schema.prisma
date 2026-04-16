@@ -60,14 +60,15 @@ model User {
   updatedAt   DateTime  @updatedAt
 
   // Relations
-  sessions      Session[]
-  characters    Character[]
-  conversations Conversation[]
-  messages      Message[]
-  transactions  Transaction[]
-  subscriptions Subscription[]
-  activities    UserActivity[]
-  proactiveLogs ProactiveLog[]
+  sessions       Session[]
+  characters     Character[]
+  conversations  Conversation[]
+  messages       Message[]
+  transactions   Transaction[]
+  subscriptions  Subscription[]
+  activities     UserActivity[]
+  proactiveLogs  ProactiveLog[]
+  messageUnlocks MessageUnlock[]
 
   @@index([email])
   @@index([username])
@@ -264,16 +265,39 @@ model Message {
   isEdited        Boolean  @default(false)
   isModerated     Boolean  @default(false)
   moderationFlags String[] // If content was flagged
-  
+
+  // Premium media gating. When true, free-tier viewers see a blurred
+  // preview + "Unlock" CTA; a successful unlock writes a MessageUnlock
+  // row so the grant survives reloads.
+  isLocked Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Relations
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user         User?        @relation(fields: [userId], references: [id])
-  
+  conversation Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User?           @relation(fields: [userId], references: [id])
+  unlocks      MessageUnlock[]
+
   @@index([conversationId])
   @@index([createdAt])
+}
+
+// Per-user unlock ledger for gated media. Keyed on (userId, messageId)
+// so repeat unlock attempts are no-ops at the DB level rather than
+// requiring application-side guards.
+model MessageUnlock {
+  id           String   @id @default(uuid())
+  userId       String
+  messageId    String
+  creditsSpent Int
+  unlockedAt   DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId])
+  @@index([userId])
 }
 
 // Audit trail for character-initiated re-engagement messages. The

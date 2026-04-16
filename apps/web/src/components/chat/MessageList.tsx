@@ -6,6 +6,8 @@ import { Zap } from 'lucide-react';
 import { TypingIndicator } from './TypingIndicator';
 import { InlineImage } from './InlineImage';
 import { AudioPlayer } from './AudioPlayer';
+import { MessageMediaGate } from './MessageMediaGate';
+import { useAuthStore } from '@/store/auth.store';
 import {
   ImageLightbox,
   LightboxImageData,
@@ -17,6 +19,15 @@ interface Message {
   content: string;
   imageUrl?: string;
   audioUrl?: string;
+  isLocked?: boolean;
+}
+
+interface MessageListProps {
+  messages: Message[];
+  isTyping: boolean;
+  // Called after a successful unlock so the parent can update the message
+  // row in state (flip isLocked → false, patch URLs if server replaced them).
+  onMediaUnlocked?: (messageId: string, payload: { imageUrl?: string; audioUrl?: string }) => void;
 }
 
 const COST_BADGE_DURATION_MS = 1200;
@@ -47,25 +58,26 @@ function CostBadge({ cost }: { cost: number }) {
   );
 }
 
-interface MessageListProps {
-  messages: Message[];
-  isTyping: boolean;
-}
-
 function MessageBubble({
   message,
   onImageClick,
   showCost,
+  onMediaUnlocked,
 }: {
   message: Message;
   onImageClick: (data: LightboxImageData) => void;
   showCost: boolean;
+  onMediaUnlocked?: (messageId: string, payload: { imageUrl?: string; audioUrl?: string }) => void;
 }) {
+  const isPremium = useAuthStore((s) => Boolean(s.user?.isPremium));
   const isUser = message.role === 'user';
   const hasText = !!message.content;
   const hasImage = !!message.imageUrl;
   const hasAudio = !!message.audioUrl;
   const hasMedia = hasImage || hasAudio;
+  // Free-tier viewer + assistant message flagged as locked = render the gate
+  // instead of the real media. Premium users always bypass.
+  const showGate = !isPremium && !isUser && Boolean(message.isLocked) && hasMedia;
   const mediaOnly = hasMedia && !hasText;
 
   return (
@@ -90,7 +102,18 @@ function MessageBubble({
               }`
         }`}
       >
-        {hasImage && (
+        {showGate && (
+          <div className={hasText ? 'mb-2' : ''}>
+            <MessageMediaGate
+              messageId={message.id}
+              previewUrl={message.imageUrl || ''}
+              mediaType={hasImage ? 'image' : 'voice'}
+              onUnlocked={(payload) => onMediaUnlocked?.(message.id, payload)}
+            />
+          </div>
+        )}
+
+        {!showGate && hasImage && (
           <div className={hasText ? 'mb-2' : ''}>
             <InlineImage
               src={message.imageUrl!}
@@ -114,7 +137,7 @@ function MessageBubble({
           </p>
         )}
 
-        {hasAudio && (
+        {!showGate && hasAudio && (
           <div className={hasText ? 'mt-2' : 'p-1.5'}>
             <AudioPlayer src={message.audioUrl!} />
           </div>
@@ -124,7 +147,7 @@ function MessageBubble({
   );
 }
 
-export function MessageList({ messages, isTyping }: MessageListProps) {
+export function MessageList({ messages, isTyping, onMediaUnlocked }: MessageListProps) {
   const endRef = useRef<HTMLDivElement>(null);
   const [lightboxImage, setLightboxImage] =
     useState<LightboxImageData | null>(null);
@@ -146,6 +169,7 @@ export function MessageList({ messages, isTyping }: MessageListProps) {
             message={message}
             onImageClick={setLightboxImage}
             showCost={message.role === 'user' && message.id === lastUserId}
+            onMediaUnlocked={onMediaUnlocked}
           />
         ))}
 
