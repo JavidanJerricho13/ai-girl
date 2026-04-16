@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { HealthController } from './health.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -10,6 +11,7 @@ import { MediaModule } from './modules/media/media.module';
 import { CreditsModule } from './modules/credits/credits.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { EngagementModule } from './modules/engagement/engagement.module';
 
 @Module({
   imports: [
@@ -17,6 +19,9 @@ import { AdminModule } from './modules/admin/admin.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    // Registers the @Cron decorator runtime. Discovery is global so
+    // scheduler classes in any feature module are picked up.
+    ScheduleModule.forRoot(),
     AuthModule,
     UsersModule,
     CharactersModule,
@@ -26,6 +31,7 @@ import { AdminModule } from './modules/admin/admin.module';
     CreditsModule,
     PaymentsModule,
     AdminModule,
+    EngagementModule,
   ],
   controllers: [HealthController],
   providers: [],

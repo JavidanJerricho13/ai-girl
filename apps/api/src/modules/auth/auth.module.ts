@@ -23,6 +23,8 @@ import { PrismaService } from '../../common/services/prisma.service';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, PrismaService],
-  exports: [AuthService, JwtStrategy, PassportModule],
+  // JwtModule is re-exported so downstream modules (e.g. conversations gateway
+  // handshake middleware) can inject JwtService without re-registering secrets.
+  exports: [AuthService, JwtStrategy, PassportModule, JwtModule],
 })
 export class AuthModule {}

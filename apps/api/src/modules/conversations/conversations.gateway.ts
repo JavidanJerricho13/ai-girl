@@ -4,32 +4,49 @@ import {
   SubscribeMessage,
   ConnectedSocket,
   MessageBody,
+  OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { ChatService } from '../chat/chat.service';
 import { VideoStateService } from './services/video-state.service';
+import { createWsAuthMiddleware } from './ws-auth.middleware';
 
 @WebSocketGateway({
   cors: {
     origin: '*',
   },
 })
-export class ConversationsGateway {
+export class ConversationsGateway implements OnGatewayInit {
   @WebSocketServer()
   server: Server;
 
   constructor(
     private chatService: ChatService,
     private videoStateService: VideoStateService,
+    private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
+
+  afterInit(server: Server) {
+    // Registers handshake auth on every connection. See ws-auth.middleware.ts
+    // for why we accept both Bearer (mobile) and cookie (web) tokens and why
+    // unauthenticated sockets are still allowed through.
+    server.use(createWsAuthMiddleware(this.jwtService, this.configService));
+  }
 
   @SubscribeMessage('send-message')
   async handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { conversationId: string; userId: string; content: string },
+    @MessageBody() data: { conversationId: string; userId?: string; content: string },
   ) {
     try {
-      if (!data.conversationId || !data.userId || !data.content) {
+      // Prefer the authenticated userId from the handshake token. Legacy
+      // clients (older mobile builds, tests) still pass it in the body.
+      const userId = client.data.userId || data.userId;
+
+      if (!data.conversationId || !userId || !data.content) {
         client.emit('message-error', {
           error: 'Missing required fields: conversationId, userId, or content',
         });
@@ -38,13 +55,10 @@ export class ConversationsGateway {
 
       client.join(data.conversationId);
 
-      // chat.service now yields typed events instead of raw strings. The
-      // gateway is a thin pass-through: map each event kind to its socket
-      // event name and ship it to the conversation room.
       const room = this.server.to(data.conversationId);
       for await (const event of this.chatService.processMessage({
         conversationId: data.conversationId,
-        userId: data.userId,
+        userId,
         content: data.content,
       })) {
         switch (event.kind) {
@@ -112,5 +126,24 @@ export class ConversationsGateway {
    */
   emitVideoStateChange(conversationId: string, stateData: any) {
     this.server.to(conversationId).emit('video-state-update', stateData);
+  }
+
+  /**
+   * Push a character-initiated message to every device the user has
+   * connected. The handshake middleware auto-joined them to
+   * `user:${userId}`; if they're offline, nothing listens and we rely on
+   * the (mock) push notification + message row already persisted in DB.
+   */
+  emitProactiveMessage(
+    userId: string,
+    payload: {
+      conversationId: string;
+      characterId: string;
+      messageId: string;
+      content: string;
+      createdAt: string;
+    },
+  ) {
+    this.server.to(`user:${userId}`).emit('proactive-message', payload);
   }
 }

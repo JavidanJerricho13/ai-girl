@@ -1,4 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from '../auth/auth.module';
 import { ConversationsGateway } from './conversations.gateway';
 import { ConversationsController } from './conversations.controller';
 import { ConversationsService } from './conversations.service';
@@ -8,7 +10,14 @@ import { CharactersModule } from '../characters/characters.module';
 import { PrismaService } from '../../common/services/prisma.service';
 
 @Module({
-  imports: [forwardRef(() => ChatModule), CharactersModule],
+  // AuthModule re-exports JwtModule + JwtStrategy so the gateway's handshake
+  // middleware can verify tokens against the same secret as the HTTP guards.
+  imports: [
+    ConfigModule,
+    AuthModule,
+    forwardRef(() => ChatModule),
+    CharactersModule,
+  ],
   controllers: [ConversationsController],
   providers: [
     ConversationsGateway,
@@ -16,6 +25,6 @@ import { PrismaService } from '../../common/services/prisma.service';
     VideoStateService,
     PrismaService,
   ],
-  exports: [ConversationsService, VideoStateService],
+  exports: [ConversationsService, VideoStateService, ConversationsGateway],
 })
 export class ConversationsModule {}

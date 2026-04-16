@@ -67,6 +67,7 @@ model User {
   transactions  Transaction[]
   subscriptions Subscription[]
   activities    UserActivity[]
+  proactiveLogs ProactiveLog[]
 
   @@index([email])
   @@index([username])
@@ -230,11 +231,12 @@ model Conversation {
   updatedAt DateTime @updatedAt
   
   // Relations
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  character Character       @relation(fields: [characterId], references: [id])
-  messages  Message[]
-  memories  MemorySummary[]
-  
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character     Character       @relation(fields: [characterId], references: [id])
+  messages      Message[]
+  memories      MemorySummary[]
+  proactiveLogs ProactiveLog[]
+
   @@index([userId])
   @@index([characterId])
   @@index([lastMessageAt])
@@ -272,6 +274,26 @@ model Message {
   
   @@index([conversationId])
   @@index([createdAt])
+}
+
+// Audit trail for character-initiated re-engagement messages. The
+// EngagementScheduler reads from this table to rate-limit how many
+// proactive pings a user gets per day (default max 2) and to avoid
+// re-sending the same kind of nudge in a short window.
+model ProactiveLog {
+  id             String   @id @default(uuid())
+  userId         String
+  conversationId String
+  messageId      String   // Message row this log points to
+  trigger        String   // e.g. "inactivity_6h" | "inactivity_12h"
+
+  createdAt DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([conversationId])
 }
 
 model MemorySummary {
