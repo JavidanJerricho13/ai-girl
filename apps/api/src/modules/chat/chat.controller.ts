@@ -117,20 +117,24 @@ export class ChatController {
       conversationId = conversation.id;
     }
 
-    // Stream from chat.service but collect into a single string — simpler for
-    // the landing page than piping SSE through a marketing component.
+    // chat.service yields typed events; collapse them into a single
+    // response object for the landing page. We skip the typing event here
+    // because the marketing component runs its own client-side typing
+    // animation — the natural pacing on the page already sells the feel.
     let fullResponse = '';
+    let imageUrl: string | undefined;
     try {
-      for await (const chunk of this.chatService.processMessage({
+      for await (const event of this.chatService.processMessage({
         conversationId: conversationId!,
         userId: guestId,
         content: dto.content,
       })) {
-        fullResponse += chunk;
+        if (event.kind === 'text') fullResponse += event.chunk;
+        else if (event.kind === 'media' && event.mediaType === 'image') {
+          imageUrl = event.url;
+        }
       }
     } catch (error: any) {
-      // Turn insufficient-credits into the same GUEST_LIMIT_REACHED shape so
-      // the frontend has one branch to handle.
       if (error?.message?.toLowerCase?.().includes('insufficient credits')) {
         throw new ForbiddenException({
           code: 'GUEST_LIMIT_REACHED',
@@ -145,6 +149,7 @@ export class ChatController {
     return {
       conversationId,
       reply: fullResponse,
+      imageUrl,
       messagesUsed: userMessageCount + 1,
       messagesRemaining: Math.max(0, GUEST_MESSAGE_CAP - (userMessageCount + 1)),
       limit: GUEST_MESSAGE_CAP,

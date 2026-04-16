@@ -29,30 +29,45 @@ export class ConversationsGateway {
     @MessageBody() data: { conversationId: string; userId: string; content: string },
   ) {
     try {
-      // Validate required fields
       if (!data.conversationId || !data.userId || !data.content) {
         client.emit('message-error', {
-          error: 'Missing required fields: conversationId, userId, or content'
+          error: 'Missing required fields: conversationId, userId, or content',
         });
         return;
       }
 
-      // Join conversation room
       client.join(data.conversationId);
 
-      // Stream response
-      for await (const chunk of this.chatService.processMessage({
+      // chat.service now yields typed events instead of raw strings. The
+      // gateway is a thin pass-through: map each event kind to its socket
+      // event name and ship it to the conversation room.
+      const room = this.server.to(data.conversationId);
+      for await (const event of this.chatService.processMessage({
         conversationId: data.conversationId,
         userId: data.userId,
         content: data.content,
       })) {
-        // Emit to the specific conversation room
-        this.server.to(data.conversationId).emit('message-chunk', { chunk });
+        switch (event.kind) {
+          case 'typing':
+            room.emit('message-typing', { durationMs: event.durationMs });
+            break;
+          case 'text':
+            room.emit('message-chunk', { chunk: event.chunk });
+            break;
+          case 'media':
+            room.emit('message-media', {
+              mediaType: event.mediaType,
+              url: event.url,
+              caption: event.caption,
+            });
+            break;
+          case 'complete':
+            room.emit('message-complete');
+            break;
+        }
       }
-
-      this.server.to(data.conversationId).emit('message-complete');
-    } catch (error) {
-      client.emit('message-error', { error: error.message });
+    } catch (error: any) {
+      client.emit('message-error', { error: error?.message ?? 'Unknown chat error' });
     }
   }
 

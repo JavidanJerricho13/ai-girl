@@ -47,6 +47,14 @@ export default function ChatPage() {
     newSocket.on('connect', () => setIsConnected(true));
     newSocket.on('disconnect', () => setIsConnected(false));
 
+    // Server-driven "she's thinking" indicator. We already flip isTyping to
+    // true optimistically on send; this event is mostly informative (and
+    // lets us keep the indicator alive if the thinking delay is longer
+    // than expected).
+    newSocket.on('message-typing', () => {
+      setIsTyping(true);
+    });
+
     newSocket.on('message-chunk', (data: { chunk: string }) => {
       currentAssistantMessage.current += data.chunk;
 
@@ -69,6 +77,35 @@ export default function ChatPage() {
         return newMessages;
       });
     });
+
+    // Tool-call result from send_photo — patch the current assistant message
+    // with the generated imageUrl so the image renders in the same thread
+    // bubble as the text. Falls through to a fresh bubble if the assistant
+    // hasn't emitted any text (tool-only response).
+    newSocket.on(
+      'message-media',
+      (data: { mediaType: 'image'; url: string; caption?: string }) => {
+        if (data.mediaType !== 'image') return;
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const lastIndex = newMessages.length - 1;
+          const last = newMessages[lastIndex];
+          if (last && last.role === 'assistant') {
+            newMessages[lastIndex] = { ...last, imageUrl: data.url };
+            return newMessages;
+          }
+          return [
+            ...newMessages,
+            {
+              id: `media-${Date.now()}`,
+              role: 'assistant',
+              content: data.caption ?? '',
+              imageUrl: data.url,
+            },
+          ];
+        });
+      },
+    );
 
     newSocket.on('message-complete', () => {
       setIsTyping(false);
@@ -124,6 +161,8 @@ export default function ChatPage() {
             id: msg.id,
             role: msg.role,
             content: msg.content,
+            imageUrl: msg.imageUrl ?? undefined,
+            audioUrl: msg.audioUrl ?? undefined,
           })),
         );
 
