@@ -38,7 +38,7 @@ interface CreditsInfo {
 }
 
 export default function ProfilePage() {
-  const { user, logout } = useAuthStore();
+  const { user, clear: clearAuth } = useAuthStore();
   const router = useRouter();
 
   const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
@@ -57,8 +57,16 @@ export default function ProfilePage() {
     },
   });
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    // /auth/logout clears the HttpOnly cookies server-side; clearAuth drops
+    // the client mirror. Both are needed — one without the other leaves
+    // either the server or the store thinking the user is still signed in.
+    try {
+      await apiClient.post('/api/auth/logout');
+    } catch {
+      // Non-blocking: even if the call fails, we clear locally.
+    }
+    clearAuth();
     router.push('/login');
   };
 

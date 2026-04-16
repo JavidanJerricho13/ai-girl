@@ -1,19 +1,20 @@
 import axios from 'axios';
 
+/**
+ * Every request carries the HttpOnly auth / guest cookies automatically.
+ * `withCredentials: true` is required for this to work cross-origin; the API
+ * mirrors it with `credentials: true` in its CORS config (see apps/api/src/main.ts).
+ *
+ * We no longer read tokens from localStorage — the server is the source of
+ * truth. 401s should be handled by the caller (redirect to /login) rather
+ * than swallowed here, so the user sees what happened.
+ */
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
-});
-
-// Add auth token interceptor (placeholder for future)
-apiClient.interceptors.request.use((config) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
 });
 
 export default apiClient;

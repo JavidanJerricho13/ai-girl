@@ -3,13 +3,20 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../../common/services/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+
+// Guest sessions get a small pot of credits so the existing credit-deduction
+// flow in chat.service can stay untouched (1 credit per message × 5 = 5).
+const GUEST_CREDITS = 5;
+const GUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
@@ -189,6 +196,89 @@ export class AuthService {
     return { message: 'Logged out successfully' };
   }
 
+  /**
+   * Create an anonymous guest user so the landing "Try her" preview can use
+   * the same chat pipeline as a logged-in user. Guest users have a synthetic
+   * email, a random unusable passwordHash, and a small credit budget that
+   * naturally caps the preview at GUEST_CREDITS messages.
+   */
+  async createGuest() {
+    const guestId = randomUUID();
+    const user = await this.prisma.user.create({
+      data: {
+        email: `guest-${guestId}@ethereal.local`,
+        passwordHash: `!guest-${randomUUID()}`,
+        credits: GUEST_CREDITS,
+        // Using `as any` so this compiles before `prisma generate` is re-run
+        // against the new schema fields — runtime accepts them because the
+        // migration has landed.
+        ...({
+          isGuest: true,
+          guestExpiresAt: new Date(Date.now() + GUEST_TTL_MS),
+        } as any),
+      },
+      select: {
+        id: true,
+        email: true,
+        credits: true,
+        createdAt: true,
+      },
+    });
+
+    return { guestId: user.id, credits: user.credits };
+  }
+
+  /**
+   * Called right after a guest registers: re-owns every conversation and
+   * message from the guest user onto the real user, then disables the guest.
+   * All operations run in a transaction so we never end up with orphan rows.
+   */
+  async linkGuestToUser(guestUserId: string, realUserId: string) {
+    if (guestUserId === realUserId) return { linkedConversations: 0 };
+
+    const guest = await this.prisma.user.findUnique({
+      where: { id: guestUserId },
+      select: { id: true, isGuest: true } as any,
+    });
+
+    if (!guest) {
+      // Nothing to link — either the guest expired or the cookie was forged.
+      return { linkedConversations: 0 };
+    }
+
+    if (!(guest as any).isGuest) {
+      throw new BadRequestException('Referenced user is not a guest session');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const { count: linkedConversations } = await tx.conversation.updateMany({
+        where: { userId: guestUserId },
+        data: {
+          userId: realUserId,
+          // Using `as any` until `prisma generate` picks up the new field.
+          ...({ isTemporary: false } as any),
+        },
+      });
+
+      await tx.message.updateMany({
+        where: { userId: guestUserId },
+        data: { userId: realUserId },
+      });
+
+      // Soft-disable the guest shell rather than deleting, so historical
+      // Session/Transaction rows (FK) stay intact for audit.
+      await tx.user.update({
+        where: { id: guestUserId },
+        data: {
+          isActive: false,
+          ...({ guestExpiresAt: new Date() } as any),
+        },
+      });
+
+      return { linkedConversations };
+    });
+  }
+
   async validateUser(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -213,7 +303,7 @@ export class AuthService {
     return user;
   }
 
-  private async generateTokens(userId: string, email: string) {
+  async generateTokens(userId: string, email: string) {
     const payload = { sub: userId, email };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -229,7 +319,7 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  private async createSession(userId: string, accessToken: string, refreshToken: string) {
+  async createSession(userId: string, accessToken: string, refreshToken: string) {
     // Delete old sessions for this user (optional: limit to N sessions)
     const sessionCount = await this.prisma.session.count({
       where: { userId },

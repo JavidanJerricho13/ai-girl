@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
 
-export default function LoginPage() {
+function LoginInner() {
   const router = useRouter();
-  const { login } = useAuthStore();
+  const searchParams = useSearchParams();
+  const setUser = useAuthStore((s) => s.setUser);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -22,11 +23,25 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await apiClient.post('/auth/login', formData);
-      const { user, accessToken, refreshToken } = response.data;
+      // /auth/login sets HttpOnly cookies; we just hydrate the store with
+      // the user row so the app chrome renders without an extra /auth/me hop.
+      const response = await apiClient.post('/api/auth/login', formData);
+      const { user } = response.data;
 
-      login(user, accessToken, refreshToken);
-      router.push('/chat');
+      setUser({
+        id: user.id,
+        email: user.email,
+        username: user.username ?? null,
+        firstName: user.firstName ?? null,
+        lastName: user.lastName ?? null,
+        credits: user.credits ?? 0,
+        isPremium: user.isPremium,
+        language: user.language,
+        role: user.role,
+      });
+
+      const next = searchParams?.get('next') ?? '/chat';
+      router.push(next);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {
@@ -108,5 +123,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginInner />
+    </Suspense>
   );
 }

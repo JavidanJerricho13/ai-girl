@@ -4,8 +4,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
+import apiClient from '@/lib/api-client';
 import { LANDING_CHARACTERS } from './data/characters';
-import { TRY_HER_OPENER, TRY_HER_GATE_PROMPT, pickReply } from './data/tryHerScript';
+import { TRY_HER_OPENER, TRY_HER_GATE_PROMPT } from './data/tryHerScript';
 
 type Bubble =
   | { id: string; from: 'her'; text: string; reveal: 'typing' | 'done' }
@@ -13,7 +14,30 @@ type Bubble =
 
 const character = LANDING_CHARACTERS.find((c) => c.id === 'aria') ?? LANDING_CHARACTERS[0];
 
-const MAX_CHARS = 120;
+const MAX_CHARS = 240;
+const GUEST_MESSAGE_LIMIT = 5;
+
+// Endpoint contracts live in apps/api/src/modules/auth/auth.controller.ts
+// and apps/api/src/modules/chat/chat.controller.ts. Keep these in sync.
+async function startGuestSession(): Promise<void> {
+  await apiClient.post('/api/auth/guest');
+}
+
+interface PreviewResponse {
+  conversationId: string;
+  reply: string;
+  messagesUsed: number;
+  messagesRemaining: number;
+  limit: number;
+}
+
+async function sendPreviewMessage(params: {
+  content: string;
+  conversationId?: string;
+}): Promise<PreviewResponse> {
+  const res = await apiClient.post<PreviewResponse>('/api/chat/preview', params);
+  return res.data;
+}
 
 export function TryHer() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -24,10 +48,13 @@ export function TryHer() {
   const [activated, setActivated] = useState(false);
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [draft, setDraft] = useState('');
-  const [sent, setSent] = useState(false);
-  const [sheReplied, setSheReplied] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [conversationId, setConversationId] = useState<string | undefined>();
+  const [messagesUsed, setMessagesUsed] = useState(0);
+  const [gateReached, setGateReached] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Wake up when visible — opener starts typing only once
+  // Wake up when visible — opener typed only once
   useEffect(() => {
     if (activated || !sectionRef.current) return;
     const io = new IntersectionObserver(
@@ -43,10 +70,14 @@ export function TryHer() {
     return () => io.disconnect();
   }, [activated]);
 
-  // Push opener once activated
+  // Push opener + quietly start a guest session so the first send is fast.
   useEffect(() => {
     if (!activated) return;
     setBubbles([{ id: 'opener', from: 'her', text: TRY_HER_OPENER, reveal: 'typing' }]);
+    startGuestSession().catch(() => {
+      // If the API is down we still want the opener to render; the send
+      // handler re-attempts and surfaces a gentle error.
+    });
   }, [activated]);
 
   // Auto-scroll stream to bottom on new bubble
@@ -56,38 +87,66 @@ export function TryHer() {
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [bubbles]);
 
-  // Focus input after opener finishes typing
   const onOpenerDone = () => {
     inputRef.current?.focus({ preventScroll: true });
   };
 
-  const handleSend = (e?: React.FormEvent) => {
+  const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
+    if (gateReached) return;
+
     const text = draft.trim().slice(0, MAX_CHARS);
-    if (!text || sent) return;
+    if (!text || sending) return;
 
-    setSent(true);
-    setBubbles((prev) => [
-      ...prev,
-      { id: 'you-1', from: 'you', text },
-    ]);
+    const userBubbleId = `you-${Date.now()}`;
+    setBubbles((prev) => [...prev, { id: userBubbleId, from: 'you', text }]);
+    setDraft('');
+    setSending(true);
+    setError(null);
 
-    // Her reply — small delay so it feels like she's thinking
-    const reply = pickReply(text);
-    window.setTimeout(() => {
+    try {
+      // Make sure a guest session exists; the endpoint is idempotent on the
+      // cookie, so calling it again costs nothing if we already have one.
+      await startGuestSession();
+      const resp = await sendPreviewMessage({ content: text, conversationId });
+
+      setConversationId(resp.conversationId);
+      setMessagesUsed(resp.messagesUsed);
       setBubbles((prev) => [
         ...prev,
-        { id: 'her-2', from: 'her', text: reply, reveal: 'typing' },
+        {
+          id: `her-${resp.messagesUsed}`,
+          from: 'her',
+          text: resp.reply,
+          reveal: 'typing',
+        },
       ]);
-    }, 650);
+
+      if (resp.messagesRemaining <= 0) {
+        // She already sent this reply — the *next* send would 403. Reveal
+        // the signup gate as soon as this message finishes typing.
+        setGateReached(true);
+      }
+    } catch (err: any) {
+      const payload = err?.response?.data;
+      if (err?.response?.status === 403 && payload?.code === 'GUEST_LIMIT_REACHED') {
+        setGateReached(true);
+        setMessagesUsed(payload.messagesUsed ?? GUEST_MESSAGE_LIMIT);
+      } else {
+        setError(payload?.message || 'Something went quiet. Try again?');
+      }
+    } finally {
+      setSending(false);
+    }
   };
 
-  // After her second reply, focus the gate CTA
   useEffect(() => {
-    if (sheReplied) {
+    if (gateReached) {
       gateRef.current?.focus({ preventScroll: true });
     }
-  }, [sheReplied]);
+  }, [gateReached]);
+
+  const inputDisabled = !activated || sending || gateReached;
 
   return (
     <section
@@ -150,7 +209,6 @@ export function TryHer() {
                     glow={character.accent.glow}
                     onDone={() => {
                       if (bubble.id === 'opener') onOpenerDone();
-                      if (bubble.id === 'her-2') setSheReplied(true);
                     }}
                   />
                 ) : (
@@ -158,9 +216,24 @@ export function TryHer() {
                 ),
               )}
             </AnimatePresence>
+
+            {sending ? (
+              <div className="flex">
+                <span
+                  className="max-w-[85%] rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.04] px-5 py-3 text-base text-whisper/70 backdrop-blur"
+                  aria-label="She is typing"
+                >
+                  <span className="inline-flex gap-1">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-whisper/60 [animation-delay:-0.3s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-whisper/60 [animation-delay:-0.15s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-whisper/60" />
+                  </span>
+                </span>
+              </div>
+            ) : null}
           </div>
 
-          {!sent ? (
+          {!gateReached ? (
             <form onSubmit={handleSend} className="flex items-center gap-3">
               <label htmlFor="tryher-input" className="sr-only">
                 Say something back
@@ -172,13 +245,17 @@ export function TryHer() {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 maxLength={MAX_CHARS}
-                placeholder="Say something back…"
-                disabled={!activated}
-                className="flex-1 rounded-full border border-white/10 bg-white/5 px-6 py-4 text-base text-whisper placeholder:text-whisper/40 outline-none backdrop-blur-md transition-colors focus:border-lilac/60"
+                placeholder={
+                  messagesUsed === 0
+                    ? 'Say something back…'
+                    : `${GUEST_MESSAGE_LIMIT - messagesUsed} left before she asks you to stay`
+                }
+                disabled={inputDisabled}
+                className="flex-1 rounded-full border border-white/10 bg-white/5 px-6 py-4 text-base text-whisper placeholder:text-whisper/40 outline-none backdrop-blur-md transition-colors focus:border-lilac/60 disabled:opacity-60"
               />
               <button
                 type="submit"
-                disabled={!draft.trim() || !activated}
+                disabled={!draft.trim() || inputDisabled}
                 className="grid h-12 w-12 place-items-center rounded-full text-whisper transition-all disabled:opacity-40"
                 aria-label="Send"
                 style={{
@@ -191,8 +268,14 @@ export function TryHer() {
             </form>
           ) : null}
 
+          {error ? (
+            <p className="text-sm text-whisper/60" role="status">
+              {error}
+            </p>
+          ) : null}
+
           <AnimatePresence>
-            {sheReplied ? (
+            {gateReached ? (
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -202,7 +285,7 @@ export function TryHer() {
                 <p className="text-lg text-whisper/85">{TRY_HER_GATE_PROMPT}</p>
                 <Link
                   ref={gateRef}
-                  href={`/register?char=${character.id}`}
+                  href={`/register?char=${character.id}&from=preview`}
                   className="group inline-flex items-center gap-3 rounded-full px-6 py-3 text-base font-medium text-whisper transition-all duration-300 hover:brightness-110"
                   style={{
                     background: `linear-gradient(135deg, rgb(${character.accent.glow} / 0.9), rgb(${character.accent.edge} / 0.9))`,

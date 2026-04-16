@@ -43,6 +43,10 @@ model User {
   isPremium    Boolean   @default(false)
   premiumUntil DateTime?
 
+  // Guest / anonymous session support
+  isGuest         Boolean   @default(false)
+  guestExpiresAt  DateTime?
+
   // Metadata
   isActive    Boolean   @default(true)
   isVerified  Boolean   @default(false)
@@ -62,6 +66,7 @@ model User {
   @@index([email])
   @@index([username])
   @@index([role])
+  @@index([isGuest, guestExpiresAt])
 }
 
 model Session {
@@ -201,15 +206,18 @@ model Conversation {
   userId      String
   characterId String
   title       String?
-  
+
   // Settings
   language    String  @default("en")
   nsfwEnabled Boolean @default(false)
-  
+
   // Stats
   messageCount  Int       @default(0)
   lastMessageAt DateTime?
-  
+
+  // Guest preview conversation (cleaned up on TTL, or re-owned on signup)
+  isTemporary Boolean @default(false)
+
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

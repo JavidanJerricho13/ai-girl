@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ChatService } from './chat.service';
+import { ChatController } from './chat.controller';
 import { ModelRouterService } from './services/model-router.service';
 import { GroqService } from '../../integrations/groq/groq.service';
 import { OpenAIService } from '../../integrations/openai/openai.service';
@@ -18,6 +19,7 @@ import { CreditsModule } from '../credits/credits.module';
     CharactersModule,
     CreditsModule,
   ],
+  controllers: [ChatController],
   providers: [
     ChatService,
     ModelRouterService,

@@ -2,7 +2,16 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
 import { PrismaService } from '../../../common/services/prisma.service';
+import { AUTH_COOKIE_NAME } from '../auth.cookies';
+
+// Cookie is the primary transport for web; Authorization header remains
+// supported so the React Native mobile app can keep using secure storage.
+const cookieExtractor = (req: Request): string | null => {
+  const token = req?.cookies?.[AUTH_COOKIE_NAME];
+  return typeof token === 'string' && token.length > 0 ? token : null;
+};
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -11,9 +20,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private prisma: PrismaService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        cookieExtractor,
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get('JWT_SECRET') || 'your-super-secret-jwt-key-change-in-production',
+      secretOrKey:
+        configService.get('JWT_SECRET') ||
+        'your-super-secret-jwt-key-change-in-production',
     });
   }
 

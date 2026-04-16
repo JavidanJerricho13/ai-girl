@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -8,7 +9,10 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  // Enable CORS
+  // Read HttpOnly auth/guest cookies before guards run
+  app.use(cookieParser());
+
+  // Enable CORS — credentials:true is required so the browser sends/receives cookies
   app.enableCors({
     origin: process.env.CORS_ORIGIN?.split(',') || [
       'http://localhost:3000',

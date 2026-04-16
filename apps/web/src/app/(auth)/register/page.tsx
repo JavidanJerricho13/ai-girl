@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
 
-export default function RegisterPage() {
+function RegisterInner() {
   const router = useRouter();
-  const { login } = useAuthStore();
+  const searchParams = useSearchParams();
+  const setUser = useAuthStore((s) => s.setUser);
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -23,11 +24,35 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const response = await apiClient.post('/auth/register', formData);
-      const { user, accessToken, refreshToken } = response.data;
+      // /auth/register sets HttpOnly cookies for us; we just need the user
+      // payload so the client-side store hydrates without waiting for the
+      // next /auth/me round-trip.
+      const response = await apiClient.post('/api/auth/register', formData);
+      const { user } = response.data;
 
-      login(user, accessToken, refreshToken);
-      router.push('/chat');
+      setUser({
+        id: user.id,
+        email: user.email,
+        username: user.username ?? null,
+        firstName: user.firstName ?? null,
+        lastName: user.lastName ?? null,
+        credits: user.credits ?? 0,
+      });
+
+      // If the user got here from the landing "Try her" preview, their guest
+      // conversation is in the DB keyed to a guest-id cookie. Move it onto
+      // the new account so their chat history survives the signup.
+      // (Endpoint is safe to call unconditionally — it no-ops if there's no
+      // guest cookie.)
+      try {
+        await apiClient.post('/api/auth/link-guest', {});
+      } catch {
+        // Non-blocking: signup succeeded, linking just didn't happen. User
+        // will still land in /chat with a fresh slate.
+      }
+
+      const next = searchParams?.get('next') ?? '/chat';
+      router.push(next);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -129,5 +154,13 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterInner />
+    </Suspense>
   );
 }

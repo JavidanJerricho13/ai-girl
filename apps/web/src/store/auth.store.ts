@@ -1,75 +1,63 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
-interface User {
+/**
+ * Auth state is derived from HttpOnly cookies the API sets on /auth/login,
+ * /auth/register and /auth/refresh. The frontend never touches tokens
+ * directly — it just mirrors "is this session logged in?" and the user row.
+ *
+ * Hydration happens in two places:
+ *   1. <AuthHydrator /> runs on the client once and calls GET /auth/me.
+ *   2. Pages that need the user can also call /auth/me on demand.
+ *
+ * We intentionally don't persist to localStorage: the source of truth is
+ * the server-side session, not the browser.
+ */
+
+export interface AuthUser {
   id: string;
   email: string;
-  username: string;
-  displayName: string | null;
+  username: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  avatar?: string | null;
   credits: number;
   isPremium?: boolean;
+  language?: string;
+  role?: string;
 }
 
 interface AuthState {
-  user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (user: User, accessToken: string, refreshToken: string) => void;
-  logout: () => void;
-  updateUser: (user: Partial<User>) => void;
+  // 'unknown' = haven't hit /auth/me yet; SSR layouts treat this as logged-out
+  // for rendering but the client hydrator flips it after the probe resolves.
+  status: 'unknown' | 'authenticated' | 'unauthenticated';
+  setUser: (user: AuthUser) => void;
+  clear: () => void;
+  updateUser: (patch: Partial<AuthUser>) => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      accessToken: null,
-      refreshToken: null,
-      isAuthenticated: false,
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  isAuthenticated: false,
+  status: 'unknown',
 
-      login: (user, accessToken, refreshToken) => {
-        // Store tokens in localStorage for axios interceptor
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', refreshToken);
-        }
-        set({
-          user,
-          accessToken,
-          refreshToken,
-          isAuthenticated: true,
-        });
-      },
-
-      logout: () => {
-        // Clear tokens from localStorage
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-        }
-        set({
-          user: null,
-          accessToken: null,
-          refreshToken: null,
-          isAuthenticated: false,
-        });
-      },
-
-      updateUser: (updatedUser) => {
-        set((state) => ({
-          user: state.user ? { ...state.user, ...updatedUser } : null,
-        }));
-      },
+  setUser: (user) =>
+    set({
+      user,
+      isAuthenticated: true,
+      status: 'authenticated',
     }),
-    {
-      name: 'auth-storage',
-      partialize: (state) => ({
-        user: state.user,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
-        isAuthenticated: state.isAuthenticated,
-      }),
-    }
-  )
-);
+
+  clear: () =>
+    set({
+      user: null,
+      isAuthenticated: false,
+      status: 'unauthenticated',
+    }),
+
+  updateUser: (patch) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...patch } : null,
+    })),
+}));
