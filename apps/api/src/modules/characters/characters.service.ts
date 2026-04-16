@@ -157,4 +157,70 @@ export class CharactersService {
       },
     });
   }
+
+  /**
+   * Onboarding matchmaker. Returns the top 3 public characters ranked by
+   * Euclidean distance from the requested (warmth, playfulness) point.
+   *
+   * Distance is computed in Postgres so we don't pull every character into
+   * memory to sort — Prisma can't express this declaratively. We also
+   * precompute `matchScore` (1 - distance / MAX_DIAG, scaled to 0..100)
+   * so the frontend can show "92% match" without reinventing the math.
+   *
+   * MAX_DIAG = √(100² + 100²) ≈ 141.42 (the 2-axis diagonal). Shrinking
+   * that to 0..100 gives a percentage the user can parse at a glance.
+   */
+  async findMatches(warmth: number, playfulness: number) {
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        id: string;
+        name: string;
+        displayName: string;
+        description: string;
+        warmth: number;
+        playfulness: number;
+        isPremium: boolean;
+        avatarUrl: string | null;
+        distance: number;
+      }>
+    >`
+      SELECT
+        c."id",
+        c."name",
+        c."displayName",
+        c."description",
+        c."warmth",
+        c."playfulness",
+        c."isPremium",
+        (
+          SELECT cm."url"
+          FROM "CharacterMedia" cm
+          WHERE cm."characterId" = c."id" AND cm."type" = 'profile'
+          ORDER BY cm."order" ASC, cm."createdAt" ASC
+          LIMIT 1
+        ) AS "avatarUrl",
+        sqrt(
+          power(c."warmth"      - ${warmth}, 2) +
+          power(c."playfulness" - ${playfulness}, 2)
+        ) AS "distance"
+      FROM "Character" c
+      WHERE c."isPublic" = true
+      ORDER BY "distance" ASC
+      LIMIT 3
+    `;
+
+    const MAX_DIAG = Math.sqrt(100 * 100 + 100 * 100);
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      displayName: row.displayName,
+      description: row.description,
+      warmth: row.warmth,
+      playfulness: row.playfulness,
+      isPremium: row.isPremium,
+      avatarUrl: row.avatarUrl,
+      // Round to int — showing "87.3% match" reads worse than "87%".
+      matchScore: Math.round((1 - Number(row.distance) / MAX_DIAG) * 100),
+    }));
+  }
 }

@@ -9,11 +9,26 @@ import {
   Query,
   UseGuards,
   Request,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
+import { IsInt, Max, Min } from 'class-validator';
 import { CharactersService } from './characters.service';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { UpdateCharacterDto } from './dto/update-character.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+export class MatchQuizDto {
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  warmth!: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  playfulness!: number;
+}
 
 @Controller('characters')
 export class CharactersController {
@@ -27,6 +42,18 @@ export class CharactersController {
   ) {
     const userId = req?.user?.id;
     return this.charactersService.findAll(userId, category, search);
+  }
+
+  /**
+   * Public matchmaker endpoint — takes the user's quiz-derived warmth /
+   * playfulness scores and returns the closest public characters by
+   * Euclidean distance. Unauthenticated so the onboarding quiz can run
+   * before signup; read-only and character data is already public.
+   */
+  @Post('match')
+  @HttpCode(HttpStatus.OK)
+  async match(@Body() dto: MatchQuizDto) {
+    return this.charactersService.findMatches(dto.warmth, dto.playfulness);
   }
 
   @Get(':id')
