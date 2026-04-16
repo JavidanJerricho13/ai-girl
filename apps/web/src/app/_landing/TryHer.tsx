@@ -6,7 +6,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import apiClient from '@/lib/api-client';
 import { LANDING_CHARACTERS } from './data/characters';
-import { TRY_HER_OPENER, TRY_HER_GATE_PROMPT } from './data/tryHerScript';
+
+// The preview is a thin styled wrapper over the anonymous guest-chat flow.
+// We ship a static opener and gate-prompt string because the landing page
+// needs to be ISR-cacheable and character-free — the real character reply
+// begins as soon as the user types.
+const TRY_HER_OPENER = "Hey. Didn't think you'd actually show up.";
+const TRY_HER_GATE_PROMPT = 'Want to hear what she says next?';
 
 type Bubble =
   | { id: string; from: 'her'; text: string; reveal: 'typing' | 'done' }
