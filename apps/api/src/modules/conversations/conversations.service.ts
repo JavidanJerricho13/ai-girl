@@ -73,13 +73,6 @@ export class ConversationsService {
         character: {
           include: {
             media: true,
-            // Needed by chat.service to pass the active LoRA to ChatMediaService
-            // when the LLM calls the send_photo tool. Filtered to active only
-            // so disabled LoRA variants don't leak into production chat.
-            loraModels: {
-              where: { isActive: true },
-              take: 1,
-            },
           },
         },
         messages: {

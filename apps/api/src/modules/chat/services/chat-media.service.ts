@@ -12,12 +12,12 @@ export interface InlineImageResult {
 }
 
 /**
- * Inline image generation for the chat flow. Thin wrapper on FalService +
- * StorageService that records a GenerationJob (for cost tracking + admin
- * moderation) but does NOT deduct credits — the surrounding chat message
- * already charges the user, and inline photo moments are bundled with
- * the conversation. Credit gating for free vs. premium users should be
- * added here when the premium tier ships.
+ * Inline image generation for the chat flow. Calls FAL base model with
+ * prompt-only guidance — LoRA loading is currently frozen (see ADR /
+ * cut-to-ship refactor). Records a GenerationJob for cost / moderation
+ * tracking but does NOT deduct credits (the surrounding chat message
+ * already charges the user). Credit gating for free vs. premium users
+ * should be added here when the premium tier ships.
  *
  * Kept in the chat module (not media/) because it's a different product
  * surface: the media module's ImageGenerationService creates reusable
@@ -40,17 +40,11 @@ export class ChatMediaService {
     scene: string;
     mood?: string;
     nsfwAllowed?: boolean;
-    lora?: {
-      modelUrl: string;
-      weight?: number;
-      triggerWords?: string[];
-    } | null;
   }): Promise<InlineImageResult> {
-    const { userId, characterId, scene, mood, nsfwAllowed, lora } = params;
+    const { userId, characterId, scene, mood, nsfwAllowed } = params;
 
-    const triggers = lora?.triggerWords?.length ? `${lora.triggerWords.join(', ')}, ` : '';
     const moodFragment = mood ? `${mood} mood, ` : '';
-    const prompt = `${triggers}${moodFragment}${scene}`.trim();
+    const prompt = `${moodFragment}${scene}`.trim();
 
     const job = await this.prisma.generationJob.create({
       data: {
@@ -68,8 +62,6 @@ export class ChatMediaService {
     try {
       const fal = await this.fal.generateImage({
         prompt,
-        loraUrl: lora?.modelUrl,
-        loraWeight: lora?.weight,
         imageSize: 'portrait_4_3',
         enableSafetyChecker: !nsfwAllowed,
       });

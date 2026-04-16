@@ -49,35 +49,18 @@ export class ImageGenerationService {
         );
       }
 
-      // 2. Get character and LoRA info
+      // 2. Get character. LoRA loading is currently frozen — we rely on
+      //    FAL base models + prompt engineering for visual consistency.
+      //    The LoRAModel schema is preserved for future re-enablement.
       const character = await this.prisma.character.findUnique({
         where: { id: params.characterId },
-        include: {
-          loraModels: {
-            where: { isActive: true },
-            take: 1,
-          },
-        },
       });
 
       if (!character) {
         throw new BadRequestException('Character not found');
       }
 
-      // 3. Build enhanced prompt with LoRA trigger words
-      let enhancedPrompt = params.prompt;
-      let loraUrl: string | undefined;
-      let loraWeight: number | undefined;
-
-      if (character.loraModels.length > 0) {
-        const lora = character.loraModels[0];
-        const triggerWords = lora.triggerWords.join(', ');
-        enhancedPrompt = `${triggerWords}, ${params.prompt}`;
-        loraUrl = lora.modelUrl;
-        loraWeight = lora.weight;
-        
-        this.logger.log(`Using LoRA: ${lora.name} with trigger words: ${triggerWords}`);
-      }
+      const enhancedPrompt = params.prompt;
 
       // 4. Create generation job
       const job = await this.prisma.generationJob.create({
@@ -103,8 +86,6 @@ export class ImageGenerationService {
           })
         : await this.falService.generateImage({
             prompt: enhancedPrompt,
-            loraUrl,
-            loraWeight,
             imageSize: params.imageSize,
             enableSafetyChecker: !user.nsfwEnabled,
           });

@@ -185,13 +185,6 @@ export class ChatService {
             scene: photoArgs.scene,
             mood: photoArgs.mood,
             nsfwAllowed: Boolean(conversation.nsfwEnabled),
-            lora: character.loraModels?.[0]
-              ? {
-                  modelUrl: character.loraModels[0].modelUrl,
-                  weight: character.loraModels[0].weight,
-                  triggerWords: character.loraModels[0].triggerWords,
-                }
-              : null,
           })
           .catch((err) => {
             this.logger.error(`send_photo failed: ${err?.message}`);
