@@ -1,4 +1,4 @@
-import type { Config } from 'tailwindcss'
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
@@ -8,6 +8,17 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      colors: {
+        nocturne: 'rgb(var(--color-nocturne) / <alpha-value>)',
+        plum: 'rgb(var(--color-plum) / <alpha-value>)',
+        lilac: 'rgb(var(--color-lilac) / <alpha-value>)',
+        rose: 'rgb(var(--color-rose) / <alpha-value>)',
+        whisper: 'rgb(var(--color-whisper) / <alpha-value>)',
+      },
+      fontFamily: {
+        display: ['var(--font-display)', 'Times New Roman', 'Georgia', 'serif'],
+        ui: ['var(--font-ui)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
@@ -16,5 +27,5 @@ const config: Config = {
     },
   },
   plugins: [],
-}
-export default config
+};
+export default config;

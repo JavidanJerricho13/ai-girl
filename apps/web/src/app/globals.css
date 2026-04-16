@@ -2,21 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  color: #f9fafb;
-  background-color: #111827;
+@layer base {
+  :root {
+    /* Ethereal / Liquid Consciousness — Direction A */
+    --color-nocturne: 10 11 30;     /* #0A0B1E */
+    --color-plum: 26 16 51;         /* #1A1033 */
+    --color-lilac: 139 127 255;     /* #8B7FFF */
+    --color-rose: 232 180 160;      /* #E8B4A0 */
+    --color-whisper: 245 243 255;   /* #F5F3FF */
+
+    --font-sans:
+      var(--font-ui), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display:
+      var(--font-display), 'Times New Roman', Georgia, serif;
+  }
+
+  html {
+    background-color: rgb(var(--color-nocturne));
+    color: rgb(var(--color-whisper));
+  }
+
+  body {
+    background-color: rgb(var(--color-nocturne));
+    color: rgb(var(--color-whisper));
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background-color: rgb(var(--color-lilac) / 0.35);
+    color: rgb(var(--color-whisper));
+  }
 }
 
-/* Button press feedback */
-button:active:not(:disabled) {
-  transform: scale(0.97);
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+  }
+
+  .font-ui {
+    font-family: var(--font-sans);
+  }
 }
 
-a:active {
-  transform: scale(0.98);
-}
-
-/* Dark scrollbar */
+/* Dark scrollbar (preserved from previous setup) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -25,9 +54,28 @@ a:active {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #374151;
+  background: rgb(var(--color-lilac) / 0.2);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #4b5563;
+  background: rgb(var(--color-lilac) / 0.35);
+}
+
+/* Button press feedback (preserved) */
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+a:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
