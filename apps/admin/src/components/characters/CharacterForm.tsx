@@ -19,10 +19,8 @@ interface CharacterFormData {
   displayName: string;
   description: string;
   systemPrompt: string;
-  shynessBold: number;
-  romanticPragmatic: number;
-  playfulSerious: number;
-  dominantSubmissive: number;
+  warmth: number;
+  playfulness: number;
   voiceId: string;
   voiceProvider: string;
   isPublic: boolean;
@@ -42,10 +40,8 @@ const EMPTY_FORM: CharacterFormData = {
   displayName: '',
   description: '',
   systemPrompt: '',
-  shynessBold: 50,
-  romanticPragmatic: 50,
-  playfulSerious: 50,
-  dominantSubmissive: 50,
+  warmth: 50,
+  playfulness: 50,
   voiceId: '',
   voiceProvider: '',
   isPublic: false,
@@ -202,10 +198,8 @@ export function CharacterForm({
         displayName: initialData.displayName ?? '',
         description: initialData.description ?? '',
         systemPrompt: initialData.systemPrompt ?? '',
-        shynessBold: initialData.shynessBold ?? 50,
-        romanticPragmatic: initialData.romanticPragmatic ?? 50,
-        playfulSerious: initialData.playfulSerious ?? 50,
-        dominantSubmissive: initialData.dominantSubmissive ?? 50,
+        warmth: initialData.warmth ?? 50,
+        playfulness: initialData.playfulness ?? 50,
         voiceId: initialData.voiceId ?? '',
         voiceProvider: initialData.voiceProvider ?? '',
         isPublic: initialData.isPublic ?? false,
@@ -377,28 +371,16 @@ export function CharacterForm({
           </h3>
           <div className="space-y-5">
             <PersonalitySlider
-              left="Shy"
-              right="Bold"
-              value={form.shynessBold}
-              onChange={(v) => updateField('shynessBold', v)}
+              left="Cool"
+              right="Warm"
+              value={form.warmth}
+              onChange={(v) => updateField('warmth', v)}
             />
             <PersonalitySlider
-              left="Romantic"
-              right="Pragmatic"
-              value={form.romanticPragmatic}
-              onChange={(v) => updateField('romanticPragmatic', v)}
-            />
-            <PersonalitySlider
-              left="Playful"
-              right="Serious"
-              value={form.playfulSerious}
-              onChange={(v) => updateField('playfulSerious', v)}
-            />
-            <PersonalitySlider
-              left="Dominant"
-              right="Submissive"
-              value={form.dominantSubmissive}
-              onChange={(v) => updateField('dominantSubmissive', v)}
+              left="Grave"
+              right="Playful"
+              value={form.playfulness}
+              onChange={(v) => updateField('playfulness', v)}
             />
           </div>
         </section>

@@ -29,10 +29,8 @@ function Slider({ leftLabel, rightLabel, value }: SliderProps) {
 
 function describeTraits(values: PersonalityValues): string {
   const traits: Array<[number, string, string]> = [
-    [values.shynessBold, 'shy', 'bold'],
-    [values.romanticPragmatic, 'romantic', 'pragmatic'],
-    [values.playfulSerious, 'playful', 'serious'],
-    [values.dominantSubmissive, 'dominant', 'submissive'],
+    [values.warmth, 'cool', 'warm'],
+    [values.playfulness, 'grave', 'playful'],
   ];
 
   const descriptions = traits.map(([val, left, right]) => {
@@ -44,7 +42,7 @@ function describeTraits(values: PersonalityValues): string {
   });
 
   const notable = descriptions.filter((d) => d !== 'balanced');
-  if (notable.length === 0) return 'A well-balanced personality across all traits.';
+  if (notable.length === 0) return 'A balanced blend of warmth and play.';
 
   const formatted = notable.map(
     (d) => d.charAt(0).toUpperCase() + d.slice(1),
@@ -53,10 +51,8 @@ function describeTraits(values: PersonalityValues): string {
 }
 
 export interface PersonalityValues {
-  shynessBold: number;
-  romanticPragmatic: number;
-  playfulSerious: number;
-  dominantSubmissive: number;
+  warmth: number;
+  playfulness: number;
 }
 
 interface PersonalitySlidersProps {
@@ -70,21 +66,11 @@ export function PersonalitySliders({ values }: PersonalitySlidersProps) {
         Personality
       </h3>
       <div className="bg-gray-800/40 border border-gray-700/40 rounded-xl p-4 space-y-4">
-        <Slider leftLabel="Shy" rightLabel="Bold" value={values.shynessBold} />
+        <Slider leftLabel="Cool" rightLabel="Warm" value={values.warmth} />
         <Slider
-          leftLabel="Romantic"
-          rightLabel="Pragmatic"
-          value={values.romanticPragmatic}
-        />
-        <Slider
-          leftLabel="Playful"
-          rightLabel="Serious"
-          value={values.playfulSerious}
-        />
-        <Slider
-          leftLabel="Dominant"
-          rightLabel="Submissive"
-          value={values.dominantSubmissive}
+          leftLabel="Grave"
+          rightLabel="Playful"
+          value={values.playfulness}
         />
         <p className="text-xs text-gray-500 italic pt-1 border-t border-gray-700/40">
           {describeTraits(values)}

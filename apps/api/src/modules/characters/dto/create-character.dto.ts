@@ -21,25 +21,13 @@ export class CreateCharacterDto {
   @Min(0)
   @Max(100)
   @IsOptional()
-  shynessBold?: number;
+  warmth?: number;
 
   @IsNumber()
   @Min(0)
   @Max(100)
   @IsOptional()
-  romanticPragmatic?: number;
-
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  @IsOptional()
-  playfulSerious?: number;
-
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  @IsOptional()
-  dominantSubmissive?: number;
+  playfulness?: number;
 
   @IsString()
   @IsOptional()

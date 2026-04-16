@@ -35,10 +35,8 @@ interface Character {
   name: string;
   displayName: string;
   description: string;
-  shynessBold: number;
-  romanticPragmatic: number;
-  playfulSerious: number;
-  dominantSubmissive: number;
+  warmth: number;
+  playfulness: number;
   isPremium: boolean;
   isOfficial: boolean;
   category: string[];
@@ -64,10 +62,8 @@ function formatCount(n: number): string {
 
 function describeTraits(character: Character): string {
   const traits: Array<[number, string, string]> = [
-    [character.shynessBold, 'shy', 'bold'],
-    [character.romanticPragmatic, 'romantic', 'pragmatic'],
-    [character.playfulSerious, 'playful', 'serious'],
-    [character.dominantSubmissive, 'dominant', 'submissive'],
+    [character.warmth, 'cool', 'warm'],
+    [character.playfulness, 'grave', 'playful'],
   ];
 
   const descriptions = traits
@@ -80,7 +76,7 @@ function describeTraits(character: Character): string {
     })
     .filter(Boolean) as string[];
 
-  if (descriptions.length === 0) return 'A well-balanced personality across all traits.';
+  if (descriptions.length === 0) return 'A balanced blend of warmth and play.';
 
   const formatted = descriptions.map(
     (d) => d.charAt(0).toUpperCase() + d.slice(1),
@@ -546,24 +542,14 @@ export default function CharacterDetailScreen() {
           <Text style={styles.sectionTitle}>Personality</Text>
           <View style={styles.personalityCard}>
             <PersonalitySlider
-              leftLabel="Shy"
-              rightLabel="Bold"
-              value={character.shynessBold}
+              leftLabel="Cool"
+              rightLabel="Warm"
+              value={character.warmth}
             />
             <PersonalitySlider
-              leftLabel="Romantic"
-              rightLabel="Pragmatic"
-              value={character.romanticPragmatic}
-            />
-            <PersonalitySlider
-              leftLabel="Playful"
-              rightLabel="Serious"
-              value={character.playfulSerious}
-            />
-            <PersonalitySlider
-              leftLabel="Dominant"
-              rightLabel="Submissive"
-              value={character.dominantSubmissive}
+              leftLabel="Grave"
+              rightLabel="Playful"
+              value={character.playfulness}
             />
             <View style={styles.previewDivider} />
             <Text style={styles.previewText}>

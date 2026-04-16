@@ -253,10 +253,8 @@ export class ChatService {
     parts.push(character.systemPrompt || 'You are a friendly and helpful AI companion.');
 
     const personality = buildPersonalityBlock({
-      shynessBold: character.shynessBold,
-      romanticPragmatic: character.romanticPragmatic,
-      playfulSerious: character.playfulSerious,
-      dominantSubmissive: character.dominantSubmissive,
+      warmth: character.warmth,
+      playfulness: character.playfulness,
     });
     if (personality) parts.push(personality);
 

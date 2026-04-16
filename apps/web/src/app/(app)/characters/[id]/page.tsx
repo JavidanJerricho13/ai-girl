@@ -36,10 +36,8 @@ interface Character {
   name: string;
   displayName: string;
   description: string;
-  shynessBold: number;
-  romanticPragmatic: number;
-  playfulSerious: number;
-  dominantSubmissive: number;
+  warmth: number;
+  playfulness: number;
   isPremium: boolean;
   isOfficial: boolean;
   category: string[];
@@ -180,10 +178,8 @@ export default function CharacterDetailPage({ params }: PageProps) {
   }
 
   const personality: PersonalityValues = {
-    shynessBold: character.shynessBold,
-    romanticPragmatic: character.romanticPragmatic,
-    playfulSerious: character.playfulSerious,
-    dominantSubmissive: character.dominantSubmissive,
+    warmth: character.warmth,
+    playfulness: character.playfulness,
   };
 
   const needsUpgrade = character.isPremium && !user?.isPremium;

@@ -39,10 +39,8 @@ async function main() {
       tags: ['azerbaijani', 'poetry', 'philosophy', 'culture'],
       isPublic: true,
       isOfficial: true,
-      shynessBold: 40,
-      romanticPragmatic: 70,
-      playfulSerious: 60,
-      dominantSubmissive: 45,
+      warmth: 75,
+      playfulness: 55,
     },
     {
       name: 'ayla',
@@ -53,10 +51,8 @@ async function main() {
       tags: ['energetic', 'tech-savvy', 'supportive', 'adventurous'],
       isPublic: true,
       isOfficial: true,
-      shynessBold: 80,
-      romanticPragmatic: 40,
-      playfulSerious: 70,
-      dominantSubmissive: 60,
+      warmth: 65,
+      playfulness: 80,
     },
   ];
 

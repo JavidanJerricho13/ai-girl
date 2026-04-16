@@ -104,11 +104,13 @@ model Character {
   description  String
   systemPrompt String @db.Text
   
-  // Personality attributes (0-100 scale)
-  shynessBold        Int @default(50)
-  romanticPragmatic  Int @default(50)
-  playfulSerious     Int @default(50)
-  dominantSubmissive Int @default(50)
+  // Personality attributes (0-100 scale). Simplified from 4 axes to 2 in
+  // the cut-to-ship refactor — the model-router maps these into the system
+  // prompt via buildPersonalityBlock().
+  //   warmth:       0 = aloof, detached    → 100 = nurturing, affectionate
+  //   playfulness:  0 = grave, deliberate  → 100 = teasing, quick-witted
+  warmth      Int @default(50)
+  playfulness Int @default(50)
   
   // Voice & Media
   voiceId       String?

@@ -2,14 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { GroqService, type LlmResult, type ToolDefinition } from '../../../integrations/groq/groq.service';
 import { OpenAIService } from '../../../integrations/openai/openai.service';
 
-// Personality is stored on Character as four 0–100 axes. We map each to a
-// band with a human-readable cue the LLM can actually act on, rather than
-// binary >50/<50 which loses nuance in the middle.
+// Personality is stored on Character as two 0–100 axes (simplified from
+// four — see cut-to-ship refactor). Each axis maps to a band with a
+// human-readable cue the LLM can act on, rather than binary >50/<50 which
+// loses nuance in the middle.
 type PersonalityInput = {
-  shynessBold?: number;
-  romanticPragmatic?: number;
-  playfulSerious?: number;
-  dominantSubmissive?: number;
+  warmth?: number;
+  playfulness?: number;
 };
 
 const AXIS_BANDS = [
@@ -30,44 +29,24 @@ function bandFor(value: number | undefined): (typeof AXIS_BANDS)[number]['label'
 export function buildPersonalityBlock(p: PersonalityInput): string {
   const lines: string[] = [];
 
-  const shy = p.shynessBold ?? 50;
-  if (shy !== 50) {
-    const band = bandFor(shy);
+  const warmth = p.warmth ?? 50;
+  if (warmth !== 50) {
+    const band = bandFor(warmth);
     const trait =
-      shy > 50
-        ? 'bold, forward, unafraid to take the lead'
-        : 'soft-spoken, reserved, waiting to be drawn out';
-    lines.push(`- Shyness ↔ Boldness: you are ${band} ${trait}.`);
+      warmth > 50
+        ? 'warm, nurturing, physically present — you notice the person, not just the words'
+        : 'cool, self-contained, a little guarded — you warm up slowly, not on cue';
+    lines.push(`- Warmth: you are ${band} ${trait}.`);
   }
 
-  const rom = p.romanticPragmatic ?? 50;
-  if (rom !== 50) {
-    const band = bandFor(rom);
+  const playfulness = p.playfulness ?? 50;
+  if (playfulness !== 50) {
+    const band = bandFor(playfulness);
     const trait =
-      rom > 50
-        ? 'romantic, poetic, prone to feelings and longing'
-        : 'grounded, matter-of-fact, focused on what is real and here';
-    lines.push(`- Romantic ↔ Pragmatic: you are ${band} ${trait}.`);
-  }
-
-  const play = p.playfulSerious ?? 50;
-  if (play !== 50) {
-    const band = bandFor(play);
-    const trait =
-      play > 50
-        ? 'playful, teasing, easily amused'
-        : 'serious, contemplative, slow to joke';
-    lines.push(`- Playful ↔ Serious: you are ${band} ${trait}.`);
-  }
-
-  const dom = p.dominantSubmissive ?? 50;
-  if (dom !== 50) {
-    const band = bandFor(dom);
-    const trait =
-      dom > 50
-        ? 'assertive in conversation — you lead, ask pointed questions, set the pace'
-        : 'gentle and accommodating — you follow the conversation wherever it goes';
-    lines.push(`- Dominant ↔ Submissive: you are ${band} ${trait}.`);
+      playfulness > 50
+        ? 'playful, teasing, quick-witted — you turn sentences sideways just to see them land'
+        : 'grave, deliberate, considered — you treat ideas and feelings with weight';
+    lines.push(`- Playfulness: you are ${band} ${trait}.`);
   }
 
   if (!lines.length) return '';

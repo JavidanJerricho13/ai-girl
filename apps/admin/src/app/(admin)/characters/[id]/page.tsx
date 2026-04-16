@@ -44,10 +44,8 @@ interface Character {
   conversationCount: number;
   messageCount: number;
   avgRating: number | null;
-  shynessBold: number;
-  romanticPragmatic: number;
-  playfulSerious: number;
-  dominantSubmissive: number;
+  warmth: number;
+  playfulness: number;
   createdAt: string;
   media: Array<{ url: string; type: string }>;
   creator: { id: string; username: string | null; email: string };
@@ -377,24 +375,14 @@ export default function CharacterDetailPage({ params }: PageProps) {
           </h3>
           <div className="space-y-4">
             <PersonalityBar
-              left="Shy"
-              right="Bold"
-              value={character.shynessBold}
+              left="Cool"
+              right="Warm"
+              value={character.warmth}
             />
             <PersonalityBar
-              left="Romantic"
-              right="Pragmatic"
-              value={character.romanticPragmatic}
-            />
-            <PersonalityBar
-              left="Playful"
-              right="Serious"
-              value={character.playfulSerious}
-            />
-            <PersonalityBar
-              left="Dominant"
-              right="Submissive"
-              value={character.dominantSubmissive}
+              left="Grave"
+              right="Playful"
+              value={character.playfulness}
             />
           </div>
 
