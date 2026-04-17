@@ -26,6 +26,7 @@ import { TypingIndicator } from '../../components/chat/TypingIndicator';
 import { CreditWarning } from '../../components/chat/CreditWarning';
 import { RelationshipBar } from '../../components/chat/RelationshipBar';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { haptic } from '../../utils/haptics';
 import { analytics } from '../../lib/analytics';
 
@@ -339,7 +340,7 @@ export default function ChatScreen() {
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>←</Text>
+            <Ionicons name="chevron-back" size={24} color="#F5F3FF" />
           </TouchableOpacity>
           {characterAvatar && (
             <Image source={{ uri: characterAvatar }} style={styles.headerAvatar} />
@@ -367,7 +368,7 @@ export default function ChatScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>←</Text>
+            <Ionicons name="chevron-back" size={24} color="#F5F3FF" />
           </TouchableOpacity>
           {characterAvatar && (
             <Image source={{ uri: characterAvatar }} style={styles.headerAvatar} />

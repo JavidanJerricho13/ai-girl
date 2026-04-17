@@ -13,6 +13,7 @@ import {
   FlatList,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api.service';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -390,7 +391,7 @@ export default function CharacterDetailScreen() {
           style={[styles.backButton, { top: 50 }]}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.errorIconText}>!</Text>
         <Text style={styles.errorTitle}>Character not found</Text>
@@ -428,7 +429,7 @@ export default function CharacterDetailScreen() {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.floatingBtn}

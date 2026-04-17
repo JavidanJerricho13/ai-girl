@@ -10,6 +10,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -139,9 +140,9 @@ export default function ProfileScreen() {
           onPress={() => (navigation as any).navigate('EditProfile')}
           activeOpacity={0.7}
         >
-          <Text style={styles.menuIcon}>👤</Text>
+          <Ionicons name="person-outline" size={20} color="#A1A1AA" style={styles.menuIcon} />
           <Text style={styles.menuText}>Edit Profile</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color="#52525B" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -149,9 +150,9 @@ export default function ProfileScreen() {
           onPress={() => (navigation as any).navigate('Subscription')}
           activeOpacity={0.7}
         >
-          <Text style={styles.menuIcon}>💳</Text>
+          <Ionicons name="card-outline" size={20} color="#A1A1AA" style={styles.menuIcon} />
           <Text style={styles.menuText}>Subscription & Credits</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color="#52525B" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -159,9 +160,9 @@ export default function ProfileScreen() {
           onPress={() => (navigation as any).navigate('TransactionHistory')}
           activeOpacity={0.7}
         >
-          <Text style={styles.menuIcon}>📊</Text>
+          <Ionicons name="stats-chart-outline" size={20} color="#A1A1AA" style={styles.menuIcon} />
           <Text style={styles.menuText}>Transaction History</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color="#52525B" />
         </TouchableOpacity>
       </Animated.View>
 
@@ -169,27 +170,27 @@ export default function ProfileScreen() {
         <Text style={styles.sectionTitle}>Settings</Text>
         
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-          <Text style={styles.menuIcon}>🔔</Text>
+          <Ionicons name="notifications-outline" size={20} color="#A1A1AA" style={styles.menuIcon} />
           <Text style={styles.menuText}>Notifications</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color="#52525B" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-          <Text style={styles.menuIcon}>🔒</Text>
+          <Ionicons name="lock-closed-outline" size={20} color="#A1A1AA" style={styles.menuIcon} />
           <Text style={styles.menuText}>Privacy & Security</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color="#52525B" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-          <Text style={styles.menuIcon}>❓</Text>
+          <Ionicons name="help-circle-outline" size={20} color="#A1A1AA" style={styles.menuIcon} />
           <Text style={styles.menuText}>Help & Support</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color="#52525B" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-          <Text style={styles.menuIcon}>📄</Text>
+          <Ionicons name="document-text-outline" size={20} color="#A1A1AA" style={styles.menuIcon} />
           <Text style={styles.menuText}>Terms & Privacy</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color="#52525B" />
         </TouchableOpacity>
       </Animated.View>
 

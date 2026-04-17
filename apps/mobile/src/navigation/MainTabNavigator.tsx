@@ -1,6 +1,6 @@
 import React from 'react';
-import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import { MainTabParamList } from './types';
 import DiscoverScreen from '../screens/main/DiscoverScreen';
 import ConversationsScreen from '../screens/main/ConversationsScreen';
@@ -25,6 +25,10 @@ export function MainTabNavigator() {
           height: 88,
           position: 'absolute' as const,
         },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '500' as const,
+        },
       }}
     >
       <Tab.Screen
@@ -32,8 +36,8 @@ export function MainTabNavigator() {
         component={DiscoverScreen}
         options={{
           tabBarLabel: 'Discover',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'compass' : 'compass-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -42,8 +46,8 @@ export function MainTabNavigator() {
         component={ConversationsScreen}
         options={{
           tabBarLabel: 'Chats',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'chatbubble' : 'chatbubble-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -52,8 +56,8 @@ export function MainTabNavigator() {
         component={GalleryScreen}
         options={{
           tabBarLabel: 'Gallery',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'images' : 'images-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -62,18 +66,11 @@ export function MainTabNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
           ),
         }}
       />
     </Tab.Navigator>
-  );
-}
-
-// Simple icon component (will be replaced with proper icons)
-function TabIcon({ color, size }: { color: string; size: number }) {
-  return (
-    <View style={{ width: size, height: size, backgroundColor: color, borderRadius: size / 2 }} />
   );
 }
