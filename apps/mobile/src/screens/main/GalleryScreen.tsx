@@ -248,7 +248,7 @@ const detailStyles = StyleSheet.create({
   },
   closeText: {
     fontSize: 16,
-    color: '#8B5CF6',
+    color: '#8B7FFF',
     fontWeight: '600',
   },
   headerTitle: {
@@ -258,7 +258,7 @@ const detailStyles = StyleSheet.create({
   },
   shareText: {
     fontSize: 16,
-    color: '#8B5CF6',
+    color: '#8B7FFF',
     fontWeight: '600',
   },
   content: {
@@ -421,7 +421,7 @@ export default function GalleryScreen() {
     if (!isFetchingNextPage) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color="#8B5CF6" />
+        <ActivityIndicator size="small" color="#8B7FFF" />
       </View>
     );
   };
@@ -516,8 +516,8 @@ export default function GalleryScreen() {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={() => refetch()}
-              tintColor="#8B5CF6"
-              colors={['#8B5CF6']}
+              tintColor="#8B7FFF"
+              colors={['#8B7FFF']}
             />
           }
         />
@@ -543,43 +543,43 @@ export default function GalleryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
   header: {
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#F5F3FF',
   },
   tabBar: {
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
     gap: 8,
   },
   tab: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#1F2937',
   },
   tabActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
   },
   tabText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#A1A1AA',
   },
   tabTextActive: {
     color: '#FFFFFF',
@@ -598,10 +598,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 2,
   },
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
   imageSkeleton: {
     width: CARD_SIZE,
     height: CARD_SIZE,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#1F2937',
   },
   imageOverlay: {
     position: 'absolute',
@@ -651,19 +651,19 @@ const styles = StyleSheet.create({
   voiceLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 4,
   },
   voicePrompt: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#A1A1AA',
     textAlign: 'center',
     lineHeight: 16,
     marginBottom: 4,
   },
   voiceDate: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: '#52525B',
   },
 
   // Skeleton
@@ -673,7 +673,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
     marginBottom: 16,
     borderRadius: 16,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#1F2937',
   },
 
   // Footer
@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#1F2937',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -705,12 +705,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#A1A1AA',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 24,
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
   },
   ctaButtonText: {
     fontSize: 15,
@@ -750,14 +750,14 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 12,
   },
   retryButton: {
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#1F2937',
+    backgroundColor: '#374151',
   },
   retryText: {
     fontSize: 14,

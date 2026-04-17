@@ -88,7 +88,7 @@ export default function TransactionHistoryScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
+        <ActivityIndicator size="large" color="#8B7FFF" />
       </View>
     );
   }
@@ -122,8 +122,8 @@ export default function TransactionHistoryScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={() => refetch()}
-            tintColor="#8B5CF6"
-            colors={['#8B5CF6']}
+            tintColor="#8B7FFF"
+            colors={['#8B7FFF']}
           />
         }
         ListEmptyComponent={
@@ -143,7 +143,7 @@ export default function TransactionHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
   list: {
     paddingVertical: 8,
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
     padding: 40,
   },
 
@@ -165,9 +165,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   iconCircle: {
     width: 36,
@@ -194,12 +194,12 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 2,
   },
   rowDate: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: '#52525B',
   },
   rowRight: {
     alignItems: 'flex-end',
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   },
   rowBalance: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: '#52525B',
   },
 
   // Empty
@@ -235,12 +235,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#A1A1AA',
     textAlign: 'center',
   },
 
@@ -261,12 +261,12 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 12,
   },
   retryText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#8B5CF6',
+    color: '#8B7FFF',
   },
 });

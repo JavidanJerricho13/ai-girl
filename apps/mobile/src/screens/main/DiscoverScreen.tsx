@@ -192,7 +192,7 @@ export default function DiscoverScreen() {
     if (!isLoadingMore) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color="#8B5CF6" />
+        <ActivityIndicator size="small" color="#8B7FFF" />
       </View>
     );
   };
@@ -240,7 +240,7 @@ export default function DiscoverScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder="Search characters..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#52525B"
             value={searchInput}
             onChangeText={setSearchInput}
             autoCapitalize="none"
@@ -296,8 +296,8 @@ export default function DiscoverScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor="#8B5CF6"
-              colors={['#8B5CF6']}
+              tintColor="#8B7FFF"
+              colors={['#8B7FFF']}
             />
           }
         />
@@ -309,7 +309,7 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
   header: {
     flexDirection: 'row',
@@ -318,9 +318,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   headerLeft: {
     flex: 1,
@@ -328,26 +328,26 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#A1A1AA',
   },
 
   // Search
   searchContainer: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   searchInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#1F2937',
     borderRadius: 10,
     paddingHorizontal: 12,
     height: 40,
@@ -359,29 +359,29 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: '#1F2937',
+    color: '#F5F3FF',
     paddingVertical: 0,
   },
   clearButton: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#D1D5DB',
+    backgroundColor: '#374151',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
   },
   clearButtonText: {
     fontSize: 11,
-    color: '#4B5563',
+    color: '#A1A1AA',
     fontWeight: '600',
   },
 
   // Categories
   categoriesContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   categoriesList: {
     paddingHorizontal: 16,
@@ -391,16 +391,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#1F2937',
     marginRight: 8,
   },
   categoryChipSelected: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
   },
   categoryText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#A1A1AA',
   },
   categoryTextSelected: {
     color: '#FFFFFF',
@@ -417,10 +417,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 3,
   },
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: 'rgba(139, 92, 246, 0.9)',
+    backgroundColor: 'rgba(139, 127, 255, 0.9)',
   },
   messagesBadgeText: {
     fontSize: 10,
@@ -482,13 +482,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#A1A1AA',
     textAlign: 'center',
   },
 });

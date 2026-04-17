@@ -83,8 +83,8 @@ export default function ProfileScreen() {
         <RefreshControl
           refreshing={isRefreshing}
           onRefresh={handleRefresh}
-          tintColor="#8B5CF6"
-          colors={['#8B5CF6']}
+          tintColor="#8B7FFF"
+          colors={['#8B7FFF']}
         />
       }
     >
@@ -204,7 +204,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
   content: {
     padding: 20,
@@ -221,13 +221,13 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 3,
-    borderColor: '#8B5CF6',
+    borderColor: '#8B7FFF',
   },
   avatarPlaceholder: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -239,21 +239,21 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 4,
   },
   email: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#A1A1AA',
   },
   creditsCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 3,
   },
@@ -266,18 +266,18 @@ const styles = StyleSheet.create({
   creditsTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
   },
   creditsDivider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     marginBottom: 16,
   },
   buyCreditsButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
@@ -291,20 +291,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   section: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderRadius: 16,
     marginBottom: 16,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 3,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: 'rgba(255,255,255,0.08)',
   },
   menuIcon: {
     fontSize: 20,
@@ -323,14 +323,14 @@ const styles = StyleSheet.create({
   menuText: {
     flex: 1,
     fontSize: 16,
-    color: '#374151',
+    color: '#F5F3FF',
   },
   menuArrow: {
     fontSize: 24,
-    color: '#9CA3AF',
+    color: '#52525B',
   },
   logoutButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
@@ -349,22 +349,22 @@ const styles = StyleSheet.create({
   },
   version: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: '#52525B',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
   emptyTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#F5F3FF',
   },
   emptySubtitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#A1A1AA',
     marginTop: 8,
   },
 });

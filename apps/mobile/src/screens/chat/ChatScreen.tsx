@@ -271,7 +271,7 @@ export default function ChatScreen() {
         <View style={[styles.messageBubble, styles.aiBubble]}>
           <Text style={styles.aiMessageText}>{currentStreamingMessage}</Text>
           <View style={styles.streamingIndicator}>
-            <ActivityIndicator size="small" color="#8B5CF6" />
+            <ActivityIndicator size="small" color="#8B7FFF" />
           </View>
         </View>
       </View>
@@ -365,7 +365,7 @@ export default function ChatScreen() {
         <TextInput
           style={styles.input}
           placeholder="Type a message..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#52525B"
           value={inputText}
           onChangeText={handleTyping}
           multiline
@@ -399,18 +399,18 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6B7280',
+    color: '#A1A1AA',
   },
   header: {
     flexDirection: 'row',
@@ -418,9 +418,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(10,11,30,0.92)',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 24,
-    color: '#8B5CF6',
+    color: '#8B7FFF',
   },
   headerAvatar: {
     width: 36,
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
   },
   messagesList: {
     padding: 16,
@@ -472,17 +472,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   userBubble: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
     borderBottomRightRadius: 4,
   },
   aiBubble: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderBottomLeftRadius: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   typingBubble: {
     paddingVertical: 16,
@@ -495,7 +492,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   aiMessageText: {
-    color: '#1F2937',
+    color: '#E4E4E7',
   },
   messageImage: {
     width: 200,
@@ -507,13 +504,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#1F2937',
     borderRadius: 8,
     alignItems: 'center',
   },
   audioButtonText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: '#A1A1AA',
     fontWeight: '600',
   },
   timestamp: {
@@ -525,7 +522,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   aiTimestamp: {
-    color: '#9CA3AF',
+    color: '#52525B',
   },
   streamingIndicator: {
     marginTop: 8,
@@ -540,7 +537,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
   },
   dot1: {
     opacity: 0.4,
@@ -556,9 +553,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(10,11,30,0.92)',
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: 'rgba(255,255,255,0.06)',
   },
   iconButton: {
     width: 36,
@@ -575,16 +572,18 @@ const styles = StyleSheet.create({
     maxHeight: 100,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
     fontSize: 15,
-    color: '#1F2937',
+    color: '#F5F3FF',
   },
   sendButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,

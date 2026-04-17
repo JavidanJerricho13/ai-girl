@@ -94,9 +94,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   avatar: {
     width: 52,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   avatarFallback: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -127,17 +127,17 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
     flex: 1,
     marginRight: 8,
   },
   time: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: '#52525B',
   },
   preview: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#A1A1AA',
     lineHeight: 20,
   },
 });

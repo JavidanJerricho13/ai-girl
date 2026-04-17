@@ -207,7 +207,7 @@ export default function SubscriptionScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
+        <ActivityIndicator size="large" color="#8B7FFF" />
         <Text style={styles.loadingText}>Loading packages...</Text>
       </View>
     );
@@ -221,8 +221,8 @@ export default function SubscriptionScreen() {
         <RefreshControl
           refreshing={isRefreshing}
           onRefresh={handleRefresh}
-          tintColor="#8B5CF6"
-          colors={['#8B5CF6']}
+          tintColor="#8B7FFF"
+          colors={['#8B7FFF']}
         />
       }
     >
@@ -271,7 +271,7 @@ export default function SubscriptionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
   contentContainer: {
     padding: 20,
@@ -280,12 +280,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6B7280',
+    color: '#A1A1AA',
   },
   header: {
     marginBottom: 24,
@@ -293,54 +293,54 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#A1A1AA',
     lineHeight: 24,
     marginBottom: 20,
   },
   currentCreditsCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     padding: 20,
     borderRadius: 16,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 3,
   },
   currentCreditsLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#A1A1AA',
     marginBottom: 8,
   },
   currentCreditsAmount: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#8B5CF6',
+    color: '#8B7FFF',
   },
   packagesGrid: {
     gap: 16,
   },
   packageCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderRadius: 16,
     padding: 20,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: 'rgba(255,255,255,0.08)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 3,
   },
   packageCardPopular: {
-    borderColor: '#8B5CF6',
-    shadowColor: '#8B5CF6',
+    borderColor: '#8B7FFF',
+    shadowColor: '#8B7FFF',
     shadowOpacity: 0.2,
     transform: [{ scale: 1.02 }],
   },
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -12,
     alignSelf: 'center',
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 20,
@@ -368,16 +368,16 @@ const styles = StyleSheet.create({
   packageCredits: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#F5F3FF',
   },
   packageCreditsLabel: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#A1A1AA',
     marginTop: 4,
   },
   packageDivider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     marginVertical: 16,
   },
   packageBody: {
@@ -387,12 +387,12 @@ const styles = StyleSheet.create({
   packagePrice: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#8B5CF6',
+    color: '#8B7FFF',
     marginBottom: 4,
   },
   packagePricePerCredit: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: '#52525B',
   },
   packageFeatures: {
     gap: 12,
@@ -409,10 +409,10 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#A1A1AA',
   },
   purchaseButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
@@ -440,11 +440,11 @@ const styles = StyleSheet.create({
   restoreButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#8B5CF6',
+    color: '#8B7FFF',
   },
   footerNote: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: '#52525B',
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: 20,
@@ -455,6 +455,6 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#A1A1AA',
   },
 });

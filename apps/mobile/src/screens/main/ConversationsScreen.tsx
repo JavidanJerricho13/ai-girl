@@ -124,7 +124,7 @@ export default function ConversationsScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder="Search by character name..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#52525B"
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCapitalize="none"
@@ -156,8 +156,8 @@ export default function ConversationsScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={() => refetch()}
-            tintColor="#8B5CF6"
-            colors={['#8B5CF6']}
+            tintColor="#8B7FFF"
+            colors={['#8B7FFF']}
           />
         }
         ListEmptyComponent={
@@ -194,51 +194,51 @@ export default function ConversationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
   header: {
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#F5F3FF',
   },
   searchContainer: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
     flexDirection: 'row',
     alignItems: 'center',
   },
   searchInput: {
     flex: 1,
     height: 40,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#1F2937',
     borderRadius: 10,
     paddingHorizontal: 14,
     fontSize: 15,
-    color: '#1F2937',
+    color: '#F5F3FF',
   },
   clearButton: {
     marginLeft: 8,
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#374151',
     justifyContent: 'center',
     alignItems: 'center',
   },
   clearButtonText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#A1A1AA',
     fontWeight: '600',
   },
   listContent: {
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#1F2937',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -282,13 +282,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#A1A1AA',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 24,
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
   },
   discoverButtonText: {
     fontSize: 15,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#1F2937',
+    backgroundColor: '#374151',
   },
   retryButtonText: {
     fontSize: 15,

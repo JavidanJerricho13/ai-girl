@@ -14,14 +14,16 @@ export function MainTabNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#8B5CF6',
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarActiveTintColor: '#8B7FFF',
+        tabBarInactiveTintColor: '#52525B',
         tabBarStyle: {
+          backgroundColor: 'rgba(10,11,30,0.92)',
           borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
+          borderTopColor: 'rgba(255,255,255,0.06)',
           paddingTop: 5,
-          paddingBottom: 5,
-          height: 60,
+          paddingBottom: 28,
+          height: 88,
+          position: 'absolute' as const,
         },
       }}
     >

@@ -88,7 +88,7 @@ export default function LoginScreen() {
               <TextInput
                 style={[styles.input, emailError ? styles.inputError : null]}
                 placeholder="Enter your email"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor="#52525B"
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
@@ -110,7 +110,7 @@ export default function LoginScreen() {
               <TextInput
                 style={[styles.input, passwordError ? styles.inputError : null]}
                 placeholder="Enter your password"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor="#52525B"
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
@@ -158,7 +158,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#0A0B1E',
   },
   scrollContent: {
     flexGrow: 1,
@@ -175,12 +175,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#A1A1AA',
     lineHeight: 24,
   },
   form: {
@@ -192,18 +192,18 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: '#F5F3FF',
     marginBottom: 4,
   },
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: '#1F2937',
-    backgroundColor: '#F9FAFB',
+    color: '#F5F3FF',
+    backgroundColor: '#1F2937',
   },
   inputError: {
     borderColor: '#EF4444',
@@ -215,12 +215,12 @@ const styles = StyleSheet.create({
   },
   button: {
     height: 50,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
-    shadowColor: '#8B5CF6',
+    shadowColor: '#8B7FFF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -241,11 +241,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   linkText: {
-    color: '#6B7280',
+    color: '#A1A1AA',
     fontSize: 14,
   },
   linkBold: {
-    color: '#8B5CF6',
+    color: '#8B7FFF',
     fontWeight: '600',
   },
 });

@@ -87,7 +87,7 @@ export function ConversationItemSkeleton() {
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#1F2937',
   },
   card: {
     marginRight: 16,

@@ -68,7 +68,7 @@ export default function EditProfileScreen() {
           style={styles.saveButton}
         >
           {isSaving ? (
-            <ActivityIndicator size="small" color="#8B5CF6" />
+            <ActivityIndicator size="small" color="#8B7FFF" />
           ) : (
             <Text style={styles.saveButtonText}>Save</Text>
           )}
@@ -101,7 +101,7 @@ export default function EditProfileScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
+        <ActivityIndicator size="large" color="#8B7FFF" />
       </View>
     );
   }
@@ -138,7 +138,7 @@ export default function EditProfileScreen() {
             value={firstName}
             onChangeText={setFirstName}
             placeholder="Enter first name"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#52525B"
             autoCapitalize="words"
           />
         </View>
@@ -150,7 +150,7 @@ export default function EditProfileScreen() {
             value={lastName}
             onChangeText={setLastName}
             placeholder="Enter last name"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#52525B"
             autoCapitalize="words"
           />
         </View>
@@ -161,7 +161,7 @@ export default function EditProfileScreen() {
             style={[styles.input, styles.inputDisabled]}
             value={username}
             editable={false}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#52525B"
           />
           <Text style={styles.fieldHint}>Username cannot be changed</Text>
         </View>
@@ -173,7 +173,7 @@ export default function EditProfileScreen() {
             value={bio}
             onChangeText={setBio}
             placeholder="Tell us about yourself..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#52525B"
             multiline
             numberOfLines={3}
             textAlignVertical="top"
@@ -230,7 +230,7 @@ export default function EditProfileScreen() {
           <Switch
             value={nsfwEnabled}
             onValueChange={setNsfwEnabled}
-            trackColor={{ false: '#D1D5DB', true: '#8B5CF6' }}
+            trackColor={{ false: '#374151', true: '#8B7FFF' }}
             thumbColor="#FFFFFF"
           />
         </View>
@@ -242,7 +242,7 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
   content: {
     padding: 20,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#0A0B1E',
   },
 
   // Save button (header)
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#8B5CF6',
+    color: '#8B7FFF',
   },
 
   // Avatar
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   avatarPlaceholder: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#8B7FFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -291,12 +291,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#1F2937',
   },
   changePhotoText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#A1A1AA',
   },
 
   // Fields
@@ -306,22 +306,22 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: '#F5F3FF',
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#1F2937',
+    color: '#F5F3FF',
   },
   inputDisabled: {
-    backgroundColor: '#F3F4F6',
-    color: '#9CA3AF',
+    backgroundColor: '#1F2937',
+    color: '#52525B',
   },
   inputMultiline: {
     minHeight: 80,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   },
   fieldHint: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: '#52525B',
     marginTop: 4,
   },
 
@@ -343,21 +343,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#111827',
     alignItems: 'center',
   },
   langOptionActive: {
-    borderColor: '#8B5CF6',
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+    borderColor: '#8B7FFF',
+    backgroundColor: 'rgba(139, 127, 255, 0.08)',
   },
   langOptionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#A1A1AA',
   },
   langOptionTextActive: {
-    color: '#8B5CF6',
+    color: '#8B7FFF',
   },
 
   // Toggle
@@ -365,9 +365,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
@@ -379,11 +379,11 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#F5F3FF',
     marginBottom: 2,
   },
   toggleHint: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: '#52525B',
   },
 });
