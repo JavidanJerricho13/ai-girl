@@ -10,7 +10,7 @@ import axios from 'axios';
  * than swallowed here, so the user sees what happened.
  */
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
