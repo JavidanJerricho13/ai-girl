@@ -26,7 +26,7 @@ export class CharactersService {
   async findAll(userId?: string, category?: string, search?: string, limit: number = 20, offset: number = 0) {
     const where: any = {
       OR: [
-        { isPublic: true, creator: { isShadowBanned: false } },
+        { isPublic: true },
         ...(userId ? [{ createdBy: userId }] : []),
       ],
     };
