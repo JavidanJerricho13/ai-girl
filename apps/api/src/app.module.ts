@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { HealthController } from './health.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -22,6 +23,10 @@ import { EngagementModule } from './modules/engagement/engagement.module';
     // Registers the @Cron decorator runtime. Discovery is global so
     // scheduler classes in any feature module are picked up.
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([{
+      ttl: 60_000,
+      limit: 30,
+    }]),
     AuthModule,
     UsersModule,
     CharactersModule,

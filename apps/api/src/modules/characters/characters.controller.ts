@@ -11,6 +11,8 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { IsInt, Max, Min } from 'class-validator';
 import { CharactersService } from './characters.service';
@@ -38,10 +40,12 @@ export class CharactersController {
   async findAll(
     @Query('category') category?: string,
     @Query('search') search?: string,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset?: number,
     @Request() req?: any,
   ) {
     const userId = req?.user?.id;
-    return this.charactersService.findAll(userId, category, search);
+    return this.charactersService.findAll(userId, category, search, limit, offset);
   }
 
   /**

@@ -4,10 +4,13 @@ import {
   Get,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
   HttpCode,
   HttpStatus,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -98,7 +101,12 @@ export class MediaController {
   @Get('generate/history')
   @ApiOperation({ summary: 'Get generation history' })
   @ApiResponse({ status: 200, description: 'History retrieved' })
-  async getHistory(@Request() req) {
-    return this.imageGenerationService.getGenerationHistory(req.user.userId);
+  async getHistory(
+    @Request() req,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset?: number,
+    @Query('type') type?: string,
+  ) {
+    return this.imageGenerationService.getGenerationHistory(req.user.userId, limit, offset, type);
   }
 }

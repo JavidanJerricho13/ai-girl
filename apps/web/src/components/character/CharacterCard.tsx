@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Crown, MessageSquare, Star } from 'lucide-react';
 
 export interface CharacterCardData {
@@ -9,7 +10,7 @@ export interface CharacterCardData {
   isPremium: boolean;
   conversationCount: number;
   avgRating: number | null;
-  media: Array<{ url: string; type: string }>;
+  media: Array<{ url: string; type: string; thumbnailUrl?: string | null }>;
 }
 
 interface CharacterCardProps {
@@ -33,10 +34,17 @@ export function CharacterCard({ character }: CharacterCardProps) {
       {/* Image */}
       <div className="aspect-[3/4] bg-gray-800 relative overflow-hidden">
         {profileImage ? (
-          <img
+          <Image
             src={profileImage.url}
             alt={character.displayName || character.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+            {...(profileImage.thumbnailUrl ? {
+              placeholder: 'blur' as const,
+              blurDataURL: profileImage.thumbnailUrl,
+            } : {})}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800">

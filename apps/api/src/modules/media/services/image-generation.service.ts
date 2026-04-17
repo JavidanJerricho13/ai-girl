@@ -223,16 +223,19 @@ export class ImageGenerationService {
   /**
    * Get user's generation history
    */
-  async getGenerationHistory(userId: string, limit: number = 20) {
+  async getGenerationHistory(userId: string, limit: number = 20, offset: number = 0, type?: string) {
+    const where: any = { userId };
+    if (type && (type === 'image' || type === 'voice')) {
+      where.type = type;
+    }
+
     const jobs = await this.prisma.generationJob.findMany({
-      where: {
-        userId,
-        type: 'image',
-      },
+      where,
       orderBy: {
         createdAt: 'desc',
       },
-      take: limit,
+      take: Math.min(limit, 50),
+      skip: offset,
     });
 
     return jobs;

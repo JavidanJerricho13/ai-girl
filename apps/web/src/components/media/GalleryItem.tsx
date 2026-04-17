@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { ImageOff, Play, Volume2 } from 'lucide-react';
 
 export interface GalleryItemData {
@@ -79,9 +80,12 @@ export function GalleryItem({ item, onClick }: GalleryItemProps) {
           <ImageOff size={24} className="text-gray-600" />
         </div>
       ) : (
-        <img
+        <Image
           src={item.resultUrl}
           alt={item.prompt || 'Generated image'}
+          width={512}
+          height={512}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           loading="lazy"
           onLoad={() => setLoaded(true)}
           onError={() => setError(true)}

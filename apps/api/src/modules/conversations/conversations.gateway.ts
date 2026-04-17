@@ -15,7 +15,11 @@ import { createWsAuthMiddleware } from './ws-auth.middleware';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: process.env.CORS_ORIGIN?.split(',') || [
+      'http://localhost:3000',
+      'http://localhost:3002',
+    ],
+    credentials: true,
   },
 })
 export class ConversationsGateway implements OnGatewayInit {

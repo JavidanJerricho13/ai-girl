@@ -14,6 +14,12 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000,
+    remotePatterns: [
+      { protocol: 'https', hostname: '**.r2.dev' },
+      { protocol: 'https', hostname: '**.cloudflare.com' },
+      { protocol: 'https', hostname: '**.cloudflarestorage.com' },
+      { protocol: 'https', hostname: 'fal.media' },
+    ],
   },
   modularizeImports: {
     'lucide-react': {

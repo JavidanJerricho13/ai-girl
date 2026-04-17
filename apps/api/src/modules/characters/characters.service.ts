@@ -23,7 +23,7 @@ export class CharactersService {
     });
   }
 
-  async findAll(userId?: string, category?: string, search?: string) {
+  async findAll(userId?: string, category?: string, search?: string, limit: number = 20, offset: number = 0) {
     const where: any = {
       OR: [
         { isPublic: true },
@@ -64,6 +64,8 @@ export class CharactersService {
       orderBy: {
         conversationCount: 'desc',
       },
+      take: Math.min(limit, 50),
+      skip: offset,
     });
   }
 

@@ -163,6 +163,8 @@ model Character {
   @@index([createdBy])
   @@index([isPublic])
   @@index([category])
+  @@index([isPublic, conversationCount(sort: Desc)])
+  @@index([createdBy, isPublic])
 }
 
 model CharacterMedia {
@@ -297,6 +299,7 @@ model Message {
 
   @@index([conversationId])
   @@index([createdAt])
+  @@index([conversationId, createdAt(sort: Desc)])
 }
 
 // Per-user unlock ledger for gated media. Keyed on (userId, messageId)
@@ -508,4 +511,5 @@ model GenerationJob {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([userId, type, createdAt(sort: Desc)])
 }

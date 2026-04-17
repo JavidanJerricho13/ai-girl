@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { ImageOff, ZoomIn } from 'lucide-react';
 
 interface InlineImageProps {
@@ -39,9 +40,12 @@ export function InlineImage({
         <div className="w-full h-52 bg-gray-700/50 rounded-xl animate-pulse" />
       )}
 
-      <img
+      <Image
         src={src}
         alt={alt}
+        width={512}
+        height={512}
+        sizes="(max-width: 768px) 80vw, 400px"
         loading="lazy"
         onLoad={() => setLoaded(true)}
         onError={() => setError(true)}

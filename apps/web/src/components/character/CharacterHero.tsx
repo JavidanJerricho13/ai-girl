@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface MediaItem {
   id: string;
@@ -34,10 +35,13 @@ export function CharacterHero({ name, media }: CharacterHeroProps) {
       {/* Main image */}
       <div className="aspect-[3/4] bg-gray-800 border border-gray-700/50 rounded-xl overflow-hidden">
         {selected ? (
-          <img
+          <Image
             src={selected.url}
             alt={name}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, 400px"
+            className="object-cover"
+            priority
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-800">
@@ -61,9 +65,11 @@ export function CharacterHero({ name, media }: CharacterHeroProps) {
                   : 'border-gray-700/50 hover:border-gray-600'
               }`}
             >
-              <img
+              <Image
                 src={m.thumbnailUrl || m.url}
                 alt=""
+                width={64}
+                height={64}
                 className="w-full h-full object-cover"
               />
             </button>
