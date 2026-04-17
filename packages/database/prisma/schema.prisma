@@ -75,6 +75,7 @@ model User {
   activities     UserActivity[]
   proactiveLogs  ProactiveLog[]
   messageUnlocks MessageUnlock[]
+  adminAuditLogs AdminAuditLog[] @relation("AdminActions")
 
   @@index([email])
   @@index([username])
@@ -512,4 +513,28 @@ model GenerationJob {
   @@index([status])
   @@index([createdAt])
   @@index([userId, type, createdAt(sort: Desc)])
+}
+
+// ============================================
+// ADMIN AUDIT LOG
+// ============================================
+
+model AdminAuditLog {
+  id           String   @id @default(uuid())
+  adminId      String
+  action       String   // GRANT_CREDITS | CHANGE_ROLE | CHANGE_STATUS | DELETE_CHARACTER | TOGGLE_VISIBILITY | REVIEW_MODERATION
+  resourceType String   // USER | CHARACTER | MODERATION_LOG
+  resourceId   String
+  before       Json?
+  after        Json?
+  description  String?
+  ipAddress    String?
+
+  createdAt DateTime @default(now())
+
+  admin User @relation("AdminActions", fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt(sort: Desc)])
+  @@index([resourceType, resourceId])
+  @@index([action, createdAt(sort: Desc)])
 }

@@ -64,23 +64,25 @@ export class AdminController {
   async updateCharacter(
     @Param('id') id: string,
     @Body() data: any,
+    @Request() req,
   ) {
-    return this.adminService.updateCharacter(id, data);
+    return this.adminService.updateCharacter(id, data, req.user.id);
   }
 
   @Delete('characters/:id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  async deleteCharacter(@Param('id') id: string) {
-    return this.adminService.deleteCharacter(id);
+  async deleteCharacter(@Param('id') id: string, @Request() req) {
+    return this.adminService.deleteCharacter(id, req.user.id);
   }
 
   @Patch('characters/:id/visibility')
   async updateCharacterVisibility(
     @Param('id') id: string,
     @Body('isPublic') isPublic: boolean,
+    @Request() req,
   ) {
-    return this.adminService.updateCharacterVisibility(id, isPublic);
+    return this.adminService.updateCharacterVisibility(id, isPublic, req.user.id);
   }
 
   /**
@@ -168,8 +170,9 @@ export class AdminController {
   async updateUserRole(
     @Param('id') id: string,
     @Body('role') role: string,
+    @Request() req,
   ) {
-    return this.adminService.updateUserRole(id, role);
+    return this.adminService.updateUserRole(id, role, req.user.id);
   }
 
   @Patch('users/:id/status')
@@ -178,8 +181,9 @@ export class AdminController {
   async updateUserStatus(
     @Param('id') id: string,
     @Body('isActive') isActive: boolean,
+    @Request() req,
   ) {
-    return this.adminService.updateUserStatus(id, isActive);
+    return this.adminService.updateUserStatus(id, isActive, req.user.id);
   }
 
   @Patch('users/:id/credits')
@@ -189,8 +193,9 @@ export class AdminController {
     @Param('id') id: string,
     @Body('amount', ParseIntPipe) amount: number,
     @Body('description') description: string,
+    @Request() req,
   ) {
-    return this.adminService.addCredits(id, amount, description);
+    return this.adminService.addCredits(id, amount, description, req.user.id);
   }
 
   // ── Moderation ──────────────────────────────
@@ -215,6 +220,27 @@ export class AdminController {
     @Request() req,
   ) {
     return this.adminService.reviewModerationLog(id, action, req.user.id);
+  }
+
+  // ── Analytics ────────────────────────────────
+
+  @Get('analytics/overview')
+  async getAnalyticsOverview() {
+    return this.adminService.getAnalyticsOverview();
+  }
+
+  // ── Audit Logs ──────────────────────────────
+
+  @Get('audit-logs')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getAuditLogs(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('action') action?: string,
+    @Query('adminId') adminId?: string,
+  ) {
+    return this.adminService.getAuditLogs({ page, limit, action, adminId });
   }
 
   // ── Transactions ────────────────────────────

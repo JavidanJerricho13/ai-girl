@@ -5,6 +5,10 @@ import { StorageService } from '../../common/services/storage.service';
 
 const DEFAULT_ELEVEN_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
 
+const MAX_PAGE_LIMIT = 100;
+const MAX_CREDIT_AMOUNT = 1_000_000;
+const VALID_MODERATION_ACTIONS = ['allowed', 'blocked', 'flagged'];
+
 @Injectable()
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
@@ -15,6 +19,43 @@ export class AdminService {
     private storage: StorageService,
   ) {}
 
+  // ── Audit Logging ────────────────────────────
+
+  private async logAction(params: {
+    adminId: string;
+    action: string;
+    resourceType: string;
+    resourceId: string;
+    before?: any;
+    after?: any;
+    description?: string;
+    ipAddress?: string;
+  }) {
+    try {
+      await this.prisma.adminAuditLog.create({
+        data: {
+          adminId: params.adminId,
+          action: params.action,
+          resourceType: params.resourceType,
+          resourceId: params.resourceId,
+          before: params.before ?? undefined,
+          after: params.after ?? undefined,
+          description: params.description,
+          ipAddress: params.ipAddress,
+        },
+      });
+    } catch (err) {
+      this.logger.error(`Failed to write audit log: ${(err as Error).message}`);
+    }
+  }
+
+  private safePagination(page?: number, limit?: number) {
+    const safePage = Math.max(1, Math.min(page ?? 1, 1_000_000));
+    const safeLimit = Math.max(1, Math.min(limit ?? 20, MAX_PAGE_LIMIT));
+    const skip = (safePage - 1) * safeLimit;
+    return { page: safePage, limit: safeLimit, skip };
+  }
+
   // ── Characters ────────────────────────────────
 
   async getCharacters(params: {
@@ -24,9 +65,7 @@ export class AdminService {
     page?: number;
     limit?: number;
   }) {
-    const page = params.page ?? 1;
-    const limit = params.limit ?? 20;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = this.safePagination(params.page, params.limit);
 
     const where: any = {};
 
@@ -83,7 +122,7 @@ export class AdminService {
   }
 
   async createCharacter(userId: string, data: any) {
-    return this.prisma.character.create({
+    const character = await this.prisma.character.create({
       data: {
         ...data,
         createdBy: userId,
@@ -92,46 +131,89 @@ export class AdminService {
         media: { where: { type: 'profile' }, take: 1 },
       },
     });
+
+    await this.logAction({
+      adminId: userId,
+      action: 'CREATE_CHARACTER',
+      resourceType: 'CHARACTER',
+      resourceId: character.id,
+      after: { name: character.name, displayName: character.displayName },
+    });
+
+    return character;
   }
 
-  async updateCharacter(id: string, data: any) {
+  async updateCharacter(id: string, data: any, adminId?: string) {
     const character = await this.prisma.character.findUnique({ where: { id } });
     if (!character) throw new NotFoundException('Character not found');
 
     const { id: _id, createdBy, createdAt, updatedAt, media, loraModels, creator, ...updateData } = data;
 
-    return this.prisma.character.update({
+    const updated = await this.prisma.character.update({
       where: { id },
       data: updateData,
       include: {
         media: { where: { type: 'profile' }, take: 1 },
       },
     });
+
+    if (adminId) {
+      await this.logAction({
+        adminId,
+        action: 'UPDATE_CHARACTER',
+        resourceType: 'CHARACTER',
+        resourceId: id,
+        before: { name: character.name, isPublic: character.isPublic },
+        after: { name: updated.name, isPublic: updated.isPublic },
+      });
+    }
+
+    return updated;
   }
 
-  async deleteCharacter(id: string) {
+  async deleteCharacter(id: string, adminId: string) {
     const character = await this.prisma.character.findUnique({ where: { id } });
     if (!character) throw new NotFoundException('Character not found');
 
     await this.prisma.character.delete({ where: { id } });
+
+    await this.logAction({
+      adminId,
+      action: 'DELETE_CHARACTER',
+      resourceType: 'CHARACTER',
+      resourceId: id,
+      before: { name: character.name, displayName: character.displayName, isPublic: character.isPublic },
+      description: `Deleted character "${character.displayName}"`,
+    });
+
     return { message: 'Character deleted successfully' };
   }
 
-  async updateCharacterVisibility(id: string, isPublic: boolean) {
+  async updateCharacterVisibility(id: string, isPublic: boolean, adminId: string) {
+    const before = await this.prisma.character.findUnique({
+      where: { id },
+      select: { isPublic: true, name: true },
+    });
+
     const character = await this.prisma.character.update({
       where: { id },
       data: { isPublic },
       select: { id: true, name: true, isPublic: true },
     });
+
+    await this.logAction({
+      adminId,
+      action: 'TOGGLE_VISIBILITY',
+      resourceType: 'CHARACTER',
+      resourceId: id,
+      before: { isPublic: before?.isPublic },
+      after: { isPublic },
+      description: `${isPublic ? 'Published' : 'Unpublished'} character "${character.name}"`,
+    });
+
     return character;
   }
 
-  /**
-   * Generate (or regenerate) a short greeting voice clip for a character.
-   * Uses signaturePhrases[0] if set, else a generic "Hi, it's {name}."
-   * Stored as CharacterMedia type='greeting'. Previous greeting row for
-   * this character is replaced so each character has exactly one.
-   */
   async regenerateGreeting(characterId: string) {
     const character = await this.prisma.character.findUnique({
       where: { id: characterId },
@@ -162,7 +244,6 @@ export class AdminService {
       `greeting-${Date.now()}.mp3`,
     );
 
-    // Replace previous greeting if one exists.
     await this.prisma.characterMedia.deleteMany({
       where: { characterId, type: 'greeting' },
     });
@@ -187,45 +268,53 @@ export class AdminService {
   // ── Users ────────────────────────────────────
 
   async getUser(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        bio: true,
-        role: true,
-        credits: true,
-        isPremium: true,
-        premiumUntil: true,
-        isActive: true,
-        isVerified: true,
-        language: true,
-        nsfwEnabled: true,
-        createdAt: true,
-        lastLoginAt: true,
-        _count: {
-          select: {
-            conversations: true,
-            messages: true,
-            characters: true,
-            transactions: true,
+    const [user, transactions] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          avatar: true,
+          bio: true,
+          role: true,
+          credits: true,
+          isPremium: true,
+          premiumUntil: true,
+          isActive: true,
+          isVerified: true,
+          language: true,
+          nsfwEnabled: true,
+          createdAt: true,
+          lastLoginAt: true,
+          _count: {
+            select: {
+              conversations: true,
+              messages: true,
+              characters: true,
+              transactions: true,
+            },
           },
         },
-      },
-    });
+      }),
+      this.prisma.transaction.findMany({
+        where: { userId: id },
+        select: {
+          id: true,
+          type: true,
+          amount: true,
+          balance: true,
+          description: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 15,
+      }),
+    ]);
 
     if (!user) throw new NotFoundException('User not found');
-
-    // Get recent transactions
-    const transactions = await this.prisma.transaction.findMany({
-      where: { userId: id },
-      orderBy: { createdAt: 'desc' },
-      take: 15,
-    });
 
     return { ...user, recentTransactions: transactions };
   }
@@ -236,9 +325,7 @@ export class AdminService {
     page?: number;
     limit?: number;
   }) {
-    const page = params.page ?? 1;
-    const limit = params.limit ?? 20;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = this.safePagination(params.page, params.limit);
 
     const where: any = {};
 
@@ -289,11 +376,17 @@ export class AdminService {
     };
   }
 
-  async updateUserRole(id: string, role: string) {
+  async updateUserRole(id: string, role: string, adminId: string) {
     const validRoles = ['USER', 'ADMIN', 'MODERATOR'];
     if (!validRoles.includes(role)) {
       throw new BadRequestException(`Invalid role: ${role}`);
     }
+
+    const before = await this.prisma.user.findUnique({
+      where: { id },
+      select: { role: true, email: true },
+    });
+    if (!before) throw new NotFoundException('User not found');
 
     const user = await this.prisma.user.update({
       where: { id },
@@ -301,24 +394,58 @@ export class AdminService {
       select: { id: true, email: true, role: true },
     });
 
+    await this.logAction({
+      adminId,
+      action: 'CHANGE_ROLE',
+      resourceType: 'USER',
+      resourceId: id,
+      before: { role: before.role },
+      after: { role },
+      description: `Changed ${before.email} role: ${before.role} → ${role}`,
+    });
+
     return user;
   }
 
-  async updateUserStatus(id: string, isActive: boolean) {
+  async updateUserStatus(id: string, isActive: boolean, adminId: string) {
+    const before = await this.prisma.user.findUnique({
+      where: { id },
+      select: { isActive: true, email: true },
+    });
+    if (!before) throw new NotFoundException('User not found');
+
     const user = await this.prisma.user.update({
       where: { id },
       data: { isActive },
       select: { id: true, email: true, isActive: true },
     });
 
+    await this.logAction({
+      adminId,
+      action: 'CHANGE_STATUS',
+      resourceType: 'USER',
+      resourceId: id,
+      before: { isActive: before.isActive },
+      after: { isActive },
+      description: `${isActive ? 'Unbanned' : 'Banned'} user ${before.email}`,
+    });
+
     return user;
   }
 
-  async addCredits(id: string, amount: number, description: string) {
+  async addCredits(id: string, amount: number, description: string, adminId: string) {
+    if (amount === 0) throw new BadRequestException('Amount cannot be zero');
+    if (Math.abs(amount) > MAX_CREDIT_AMOUNT) {
+      throw new BadRequestException(`Amount exceeds maximum of ${MAX_CREDIT_AMOUNT}`);
+    }
+    if (!description || description.trim().length === 0) {
+      throw new BadRequestException('Description is required for audit trail');
+    }
+
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
 
-    const newBalance = user.credits + amount;
+    const newBalance = Math.max(0, user.credits + amount);
 
     await this.prisma.$transaction([
       this.prisma.user.update({
@@ -328,13 +455,23 @@ export class AdminService {
       this.prisma.transaction.create({
         data: {
           userId: id,
-          type: 'EARN',
+          type: amount > 0 ? 'EARN' : 'SPEND',
           amount,
           balance: newBalance,
-          description: description || 'Admin credit grant',
+          description: description.trim(),
         },
       }),
     ]);
+
+    await this.logAction({
+      adminId,
+      action: 'GRANT_CREDITS',
+      resourceType: 'USER',
+      resourceId: id,
+      before: { credits: user.credits },
+      after: { credits: newBalance },
+      description: `${amount > 0 ? 'Granted' : 'Deducted'} ${Math.abs(amount)} credits. Reason: ${description.trim()}`,
+    });
 
     return { id, credits: newBalance };
   }
@@ -346,9 +483,7 @@ export class AdminService {
     limit?: number;
     isViolation?: boolean;
   }) {
-    const page = params.page ?? 1;
-    const limit = params.limit ?? 20;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = this.safePagination(params.page, params.limit);
 
     const where: any = {};
     if (params.isViolation !== undefined) {
@@ -375,13 +510,31 @@ export class AdminService {
   }
 
   async reviewModerationLog(id: string, action: string, reviewerId: string) {
+    if (!VALID_MODERATION_ACTIONS.includes(action)) {
+      throw new BadRequestException(
+        `Invalid action. Must be one of: ${VALID_MODERATION_ACTIONS.join(', ')}`,
+      );
+    }
+
     const log = await this.prisma.moderationLog.findUnique({ where: { id } });
     if (!log) throw new NotFoundException('Moderation log not found');
 
-    return this.prisma.moderationLog.update({
+    const updated = await this.prisma.moderationLog.update({
       where: { id },
       data: { action, reviewedBy: reviewerId },
     });
+
+    await this.logAction({
+      adminId: reviewerId,
+      action: 'REVIEW_MODERATION',
+      resourceType: 'MODERATION_LOG',
+      resourceId: id,
+      before: { action: log.action },
+      after: { action },
+      description: `Moderation decision: ${action} (content: ${log.contentType}/${log.contentId})`,
+    });
+
+    return updated;
   }
 
   // ── Transactions ────────────────────────────
@@ -392,9 +545,7 @@ export class AdminService {
     page?: number;
     limit?: number;
   }) {
-    const page = params.page ?? 1;
-    const limit = params.limit ?? 20;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = this.safePagination(params.page, params.limit);
 
     const where: any = {};
 
@@ -433,5 +584,73 @@ export class AdminService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  // ── Analytics ─────────────────────────────────
+
+  async getAnalyticsOverview() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [
+      totalUsers,
+      newUsersToday,
+      totalMessages,
+      messagesToday,
+      totalRevenue,
+      activeConversations,
+      totalImages,
+    ] = await Promise.all([
+      this.prisma.user.count({ where: { isGuest: false } }),
+      this.prisma.user.count({ where: { isGuest: false, createdAt: { gte: today } } }),
+      this.prisma.message.count(),
+      this.prisma.message.count({ where: { createdAt: { gte: today } } }),
+      this.prisma.transaction.aggregate({
+        where: { type: 'PURCHASE' },
+        _sum: { amount: true },
+      }),
+      this.prisma.conversation.count({ where: { lastMessageAt: { gte: today } } }),
+      this.prisma.generationJob.count({ where: { type: 'image', status: 'COMPLETED' } }),
+    ]);
+
+    return {
+      totalUsers,
+      newUsersToday,
+      totalMessages,
+      messagesToday,
+      totalRevenue: totalRevenue._sum.amount ?? 0,
+      activeConversations,
+      totalImages,
+    };
+  }
+
+  // ── Audit Logs Viewer ─────────────────────────
+
+  async getAuditLogs(params: {
+    page?: number;
+    limit?: number;
+    action?: string;
+    adminId?: string;
+  }) {
+    const { page, limit, skip } = this.safePagination(params.page, params.limit);
+
+    const where: any = {};
+    if (params.action) where.action = params.action;
+    if (params.adminId) where.adminId = params.adminId;
+
+    const [logs, total] = await Promise.all([
+      this.prisma.adminAuditLog.findMany({
+        where,
+        include: {
+          admin: { select: { id: true, email: true, username: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.adminAuditLog.count({ where }),
+    ]);
+
+    return { data: logs, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 }
