@@ -147,6 +147,11 @@ class ApiService {
     return response.data;
   }
 
+  async matchCharacters(warmth: number, playfulness: number) {
+    const response = await this.client.post('/characters/match', { warmth, playfulness });
+    return response.data;
+  }
+
   async getCharacter(id: string) {
     const response = await this.client.get(`/characters/${id}`);
     return response.data;

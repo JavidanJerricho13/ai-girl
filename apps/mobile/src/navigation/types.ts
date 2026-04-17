@@ -1,11 +1,17 @@
 export type RootStackParamList = {
   Auth: undefined;
-  Main: undefined;
+  Onboarding: undefined;
+  Main: undefined | { screen?: string; params?: any };
 };
 
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
+};
+
+export type OnboardingStackParamList = {
+  Quiz: undefined;
+  MatchResult: { warmth: number; playfulness: number };
 };
 
 export type MainTabParamList = {
