@@ -22,9 +22,11 @@ import { MessageSkeleton } from '../../components/LoadingSkeleton';
 import { AnimatedCreditBadge } from '../../components/AnimatedCreditBadge';
 import { ImageViewer, ImageViewerData } from '../../components/media/ImageViewer';
 import { ChatStarters } from '../../components/chat/ChatStarters';
+import { TypingIndicator } from '../../components/chat/TypingIndicator';
 import { CreditWarning } from '../../components/chat/CreditWarning';
 import { RelationshipBar } from '../../components/chat/RelationshipBar';
 import { haptic } from '../../utils/haptics';
+import { analytics } from '../../lib/analytics';
 
 interface RouteParams {
   conversationId: string;
@@ -137,6 +139,7 @@ export default function ChatScreen() {
     if (!content || isSending) return;
 
     haptic.light();
+    analytics.track('message_sent', { character_id: params.characterId || '' });
     const messageContent = content;
     setInputText('');
     setIsSending(true);
@@ -313,18 +316,14 @@ export default function ChatScreen() {
   const renderTypingIndicator = () => {
     if (!isTyping) return null;
 
+    const phase = currentStreamingMessage ? 'typing' : 'thinking';
+
     return (
       <View style={[styles.messageContainer, styles.aiMessageContainer]}>
         {characterAvatar && (
           <Image source={{ uri: characterAvatar }} style={styles.avatar} />
         )}
-        <View style={[styles.messageBubble, styles.aiBubble, styles.typingBubble]}>
-          <View style={styles.typingDots}>
-            <View style={[styles.dot, styles.dot1]} />
-            <View style={[styles.dot, styles.dot2]} />
-            <View style={[styles.dot, styles.dot3]} />
-          </View>
-        </View>
+        <TypingIndicator phase={phase} />
       </View>
     );
   };

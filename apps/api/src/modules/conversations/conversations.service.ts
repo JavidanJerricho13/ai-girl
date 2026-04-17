@@ -31,11 +31,34 @@ export class ConversationsService {
             },
           },
         },
+        messages: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
 
     // Increment character conversation count
     await this.charactersService.incrementConversationCount(dto.characterId);
+
+    // Auto-generate greeting message from character
+    try {
+      const character = conversation.character as any;
+      const phrases: string[] = character?.signaturePhrases ?? [];
+      const greeting = phrases[0]
+        || `Hey! I'm ${character?.displayName || 'here'}. What's on your mind?`;
+
+      await this.prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: 'assistant',
+          content: greeting,
+          language: dto.language || 'en',
+        },
+      });
+    } catch {
+      // Non-blocking — conversation still created even if greeting fails
+    }
 
     return conversation;
   }

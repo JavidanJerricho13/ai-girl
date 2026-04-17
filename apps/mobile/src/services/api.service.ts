@@ -122,6 +122,11 @@ class ApiService {
     return response.data;
   }
 
+  async updatePushToken(pushToken: string) {
+    const response = await this.client.patch('/users/push-token', { pushToken });
+    return response.data;
+  }
+
   async claimDailyReward() {
     const response = await this.client.post('/credits/claim-daily');
     return response.data;

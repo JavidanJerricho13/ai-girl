@@ -134,15 +134,26 @@ function MediaDetailModal({
   const handleShare = async () => {
     if (!item.resultUrl) return;
     try {
+      const characterLink = item.characterId
+        ? `\n\nhttps://ethereal.app/c/${item.characterId}`
+        : '';
       await Share.share({
         message: item.prompt
-          ? `Check out this ${item.type} I generated: ${item.prompt}`
-          : `Check out this generated ${item.type}!`,
+          ? `"${item.prompt.slice(0, 100)}${item.prompt.length > 100 ? '...' : ''}"${characterLink}`
+          : `Check out what I created on Ethereal!${characterLink}`,
         url: item.resultUrl,
       });
     } catch {
       // cancelled
     }
+  };
+
+  const handleChatWithCharacter = () => {
+    if (!item.characterId) return;
+    onClose();
+    (navigation as any).navigate('CharacterDetail', {
+      characterId: item.characterId,
+    });
   };
 
   return (
@@ -227,6 +238,17 @@ function MediaDetailModal({
               </Text>
             </View>
           </View>
+
+          {/* Chat with character */}
+          {item.characterId && (
+            <TouchableOpacity
+              style={detailStyles.chatButton}
+              onPress={handleChatWithCharacter}
+              activeOpacity={0.8}
+            >
+              <Text style={detailStyles.chatButtonText}>Chat with character →</Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </View>
     </Modal>
@@ -345,6 +367,20 @@ const detailStyles = StyleSheet.create({
   },
   typeBadgeTextVoice: {
     color: '#F59E0B',
+  },
+  chatButton: {
+    backgroundColor: 'rgba(139, 127, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 127, 255, 0.2)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  chatButtonText: {
+    color: '#8B7FFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 

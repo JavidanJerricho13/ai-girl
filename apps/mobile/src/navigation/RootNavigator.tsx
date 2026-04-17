@@ -11,6 +11,8 @@ import { notificationService } from '../services/notifications.service';
 import { apiService } from '../services/api.service';
 import { ActivityIndicator, View } from 'react-native';
 import { StatusBarConfig } from '../components/StatusBarConfig';
+import { analytics } from '../lib/analytics';
+import { errorTracking } from '../lib/errorTracking';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -39,12 +41,14 @@ export function RootNavigator() {
     })();
   }, [isAuthenticated]);
 
-  // Register push notifications after login
+  // Register push notifications + analytics after login
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user) return;
     notificationService.register();
     notificationService.clearBadge();
-  }, [isAuthenticated]);
+    analytics.setUser(user.id);
+    errorTracking.setUser(user.id, user.email);
+  }, [isAuthenticated, user?.id]);
 
   // Claim daily rewards on app launch
   useEffect(() => {

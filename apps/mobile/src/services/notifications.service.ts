@@ -48,9 +48,8 @@ class NotificationService {
       });
       this.token = tokenData.data;
 
-      // Send token to backend
-      await apiService.updateProfile({ pushToken: this.token } as any).catch(() => {
-        // Non-blocking — token will be sent on next attempt
+      // Send token to backend via dedicated endpoint
+      await apiService.updatePushToken(this.token).catch(() => {
         console.log('[Notifications] Failed to send token to backend');
       });
 
