@@ -90,20 +90,13 @@ export default function DiscoverPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 gap-4">
-        <div className="flex items-center gap-3 shrink-0">
-          <Compass className="text-purple-400" size={28} />
-          <h2 className="text-2xl font-semibold text-white">
-            Discover Characters
-          </h2>
-        </div>
-
-        {/* Search input */}
-        <div className="relative w-full max-w-xs">
+      {/* Search + filters — compact header */}
+      <div className="mb-6 space-y-4">
+        {/* Search bar — full width, prominent */}
+        <div className="relative">
           <Search
             size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
           />
           <input
             ref={inputRef}
@@ -111,22 +104,20 @@ export default function DiscoverPage() {
             placeholder="Search characters..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/30 transition-colors"
+            className="w-full pl-11 pr-10 py-3 glass border-white/10 rounded-2xl text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-lilac/30 focus:ring-1 focus:ring-lilac/20 transition-colors"
           />
           {searchInput && (
             <button
               onClick={handleClearSearch}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
               aria-label="Clear search"
             >
               <X size={16} />
             </button>
           )}
         </div>
-      </div>
 
-      {/* Category Chips */}
-      <div className="mb-6">
+        {/* Category Chips */}
         <CategoryChips selected={category} onChange={setCategory} />
       </div>
 
