@@ -5,7 +5,9 @@ import { useEffect, useState } from 'react';
 
 const FluidBackground = dynamic(() => import('./FluidBackground'), {
   ssr: false,
-  loading: () => null,
+  loading: () => (
+    <div className="absolute inset-0 bg-gradient-to-b from-nocturne via-plum/40 to-nocturne animate-pulse" />
+  ),
 });
 
 export function HeroCanvas() {

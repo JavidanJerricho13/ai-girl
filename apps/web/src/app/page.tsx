@@ -1,11 +1,17 @@
+import dynamic from 'next/dynamic';
 import { Hero } from './_landing/Hero';
-import { CharacterGallery } from './_landing/CharacterGallery';
-import { TryHer } from './_landing/TryHer';
-import { Pricing } from './_landing/Pricing';
-import { QuietReassurance } from './_landing/QuietReassurance';
-import { FAQ } from './_landing/FAQ';
-import { FinalCTA } from './_landing/FinalCTA';
-import { Footer } from './_landing/Footer';
+
+// Below-fold sections — lazy-loaded for faster initial paint.
+// Hero stays eager since it's the LCP element.
+const CharacterGallery = dynamic(() => import('./_landing/CharacterGallery').then(m => ({ default: m.CharacterGallery })), {
+  loading: () => <div className="h-screen bg-nocturne" />,
+});
+const TryHer = dynamic(() => import('./_landing/TryHer').then(m => ({ default: m.TryHer })));
+const Pricing = dynamic(() => import('./_landing/Pricing').then(m => ({ default: m.Pricing })));
+const QuietReassurance = dynamic(() => import('./_landing/QuietReassurance').then(m => ({ default: m.QuietReassurance })));
+const FAQ = dynamic(() => import('./_landing/FAQ').then(m => ({ default: m.FAQ })));
+const FinalCTA = dynamic(() => import('./_landing/FinalCTA').then(m => ({ default: m.FinalCTA })));
+const Footer = dynamic(() => import('./_landing/Footer').then(m => ({ default: m.Footer })));
 
 // Authenticated visitors are redirected to /discover by the edge middleware
 // (apps/web/src/middleware.ts) — no client-side auth check needed here.
