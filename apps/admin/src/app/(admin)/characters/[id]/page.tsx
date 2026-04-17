@@ -26,6 +26,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
 
 // ── Types ────────────────────────────────────────────────
@@ -202,9 +203,10 @@ export default function CharacterDetailPage({ params }: PageProps) {
       await apiClient.patch(`/admin/characters/${id}/visibility`, {
         isPublic: !character.isPublic,
       });
+      toast.success(`Character ${!character.isPublic ? 'published' : 'unpublished'}`);
       queryClient.invalidateQueries({ queryKey: ['admin-character', id] });
     } catch {
-      alert('Failed to update visibility');
+      toast.error('Failed to update visibility');
     }
   };
 

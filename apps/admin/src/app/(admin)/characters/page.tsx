@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
 import { CharacterFilterBar } from '@/components/characters/CharacterFilterBar';
 import {
@@ -106,9 +107,10 @@ export default function CharactersPage() {
           apiClient.patch(`/admin/characters/${id}/visibility`, { isPublic }),
         ),
       );
+      toast.success('Visibility updated');
       handleRefresh();
     } catch {
-      alert('Some operations failed');
+      toast.error('Some operations failed');
     } finally {
       setBulkLoading(false);
     }
@@ -129,9 +131,10 @@ export default function CharactersPage() {
           apiClient.delete(`/admin/characters/${id}`),
         ),
       );
+      toast.success('Characters deleted');
       handleRefresh();
     } catch {
-      alert('Some deletions failed');
+      toast.error('Some deletions failed');
     } finally {
       setBulkLoading(false);
     }

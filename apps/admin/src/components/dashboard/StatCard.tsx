@@ -4,10 +4,11 @@ interface StatCardProps {
   title: string;
   value: string;
   change?: number;
+  changeLabel?: string;
   icon: React.ReactNode;
 }
 
-export function StatCard({ title, value, change, icon }: StatCardProps) {
+export function StatCard({ title, value, change, changeLabel, icon }: StatCardProps) {
   const trend =
     change === undefined
       ? null
@@ -47,9 +48,9 @@ export function StatCard({ title, value, change, icon }: StatCardProps) {
             }`}
           >
             {change > 0 ? '+' : ''}
-            {change}%
+            {change}{changeLabel ? '' : '%'}
           </span>
-          <span className="text-xs text-gray-600">vs last period</span>
+          <span className="text-xs text-gray-600">{changeLabel || 'vs last period'}</span>
         </div>
       )}
     </div>

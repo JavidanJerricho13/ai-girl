@@ -19,6 +19,7 @@ import {
   ArrowDown,
   X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
 import { StatusBadge } from '@/components/users/StatusBadge';
 
@@ -109,10 +110,11 @@ function CreditAdjustmentModal({
         amount: num,
         description: reason || 'Admin adjustment',
       });
+      toast.success('Credits adjusted');
       onDone();
       onClose();
     } catch {
-      alert('Failed to adjust credits');
+      toast.error('Failed to adjust credits');
     } finally {
       setIsLoading(false);
     }
@@ -203,9 +205,10 @@ export default function UserDetailPage({ params }: PageProps) {
     setRoleLoading(true);
     try {
       await apiClient.patch(`/admin/users/${id}/role`, { role: newRole });
+      toast.success(`Role updated to ${newRole}`);
       refresh();
     } catch {
-      alert('Failed to update role');
+      toast.error('Failed to update role');
     } finally {
       setRoleLoading(false);
     }
@@ -220,9 +223,10 @@ export default function UserDetailPage({ params }: PageProps) {
       await apiClient.patch(`/admin/users/${id}/status`, {
         isActive: !user.isActive,
       });
+      toast.success(`User ${!user.isActive ? 'unbanned' : 'banned'}`);
       refresh();
     } catch {
-      alert('Failed to update status');
+      toast.error('Failed to update status');
     } finally {
       setStatusLoading(false);
     }

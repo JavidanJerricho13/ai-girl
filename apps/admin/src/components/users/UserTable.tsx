@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
+import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
 
 export interface AdminUser {
@@ -61,9 +62,10 @@ function ActionMenu({
     setIsLoading(true);
     try {
       await apiClient.patch(`/admin/users/${user.id}/role`, { role: newRole });
+      toast.success(`Role updated to ${newRole}`);
       onRefresh();
     } catch {
-      alert('Failed to update role');
+      toast.error('Failed to update role');
     } finally {
       setIsLoading(false);
       setRoleDropdown(false);
@@ -77,9 +79,10 @@ function ActionMenu({
       await apiClient.patch(`/admin/users/${user.id}/status`, {
         isActive: !user.isActive,
       });
+      toast.success(`User ${!user.isActive ? 'unbanned' : 'banned'}`);
       onRefresh();
     } catch {
-      alert('Failed to update status');
+      toast.error('Failed to update status');
     } finally {
       setIsLoading(false);
       setOpen(false);
@@ -95,9 +98,10 @@ function ActionMenu({
         amount,
         description: 'Admin credit grant',
       });
+      toast.success(`${amount} credits sent`);
       onRefresh();
     } catch {
-      alert('Failed to send credits');
+      toast.error('Failed to send credits');
     } finally {
       setIsLoading(false);
       setCreditsModal(false);

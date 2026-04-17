@@ -8,6 +8,7 @@ import {
   EyeOff,
   Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
 
 export interface AdminCharacter {
@@ -63,9 +64,10 @@ export function CharacterTable({
     setLoadingAction(id);
     try {
       await apiClient.delete(`/admin/characters/${id}`);
+      toast.success('Character deleted');
       onRefresh();
     } catch {
-      alert('Failed to delete character');
+      toast.error('Failed to delete character');
     } finally {
       setLoadingAction(null);
     }
@@ -77,9 +79,10 @@ export function CharacterTable({
       await apiClient.patch(`/admin/characters/${char.id}/visibility`, {
         isPublic: !char.isPublic,
       });
+      toast.success(`Character ${!char.isPublic ? 'published' : 'unpublished'}`);
       onRefresh();
     } catch {
-      alert('Failed to update visibility');
+      toast.error('Failed to update visibility');
     } finally {
       setLoadingAction(null);
     }

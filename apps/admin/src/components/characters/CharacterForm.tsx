@@ -10,6 +10,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
 
 // ── Types ────────────────────────────────────────────────
@@ -263,10 +264,11 @@ export function CharacterForm({
       } else if (characterId) {
         await apiClient.patch(`/admin/characters/${characterId}`, payload);
       }
+      toast.success('Character saved successfully');
       router.push('/characters');
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Failed to save character';
-      alert(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
@@ -277,9 +279,10 @@ export function CharacterForm({
     if (!confirm('Delete this character permanently?')) return;
     try {
       await apiClient.delete(`/admin/characters/${characterId}`);
+      toast.success('Character deleted');
       router.push('/characters');
     } catch {
-      alert('Failed to delete character');
+      toast.error('Failed to delete character');
     }
   };
 

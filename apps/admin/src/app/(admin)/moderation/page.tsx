@@ -16,6 +16,7 @@ import {
   ChevronUp,
   Sparkles,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
 
 // ── Types ────────────────────────────────────────────────
@@ -87,9 +88,10 @@ function PendingCard({
       await apiClient.patch(`/admin/characters/${character.id}/visibility`, {
         isPublic: true,
       });
+      toast.success('Character approved');
       onApprove();
     } catch {
-      alert('Failed to approve');
+      toast.error('Failed to approve');
     } finally {
       setLoading(null);
     }
@@ -213,9 +215,10 @@ function FlaggedCard({
     setLoading(action);
     try {
       await apiClient.patch(`/admin/moderation/logs/${log.id}`, { action });
+      toast.success(`Content ${action}`);
       onAction();
     } catch {
-      alert('Failed to update');
+      toast.error('Failed to update');
     } finally {
       setLoading(null);
     }
