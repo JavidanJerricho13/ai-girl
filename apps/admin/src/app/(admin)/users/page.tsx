@@ -22,6 +22,8 @@ export default function UsersPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const limit = 20;
 
   // Debounce search
@@ -38,10 +40,20 @@ export default function UsersPage() {
     setPage(1);
   }, [roleFilter]);
 
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+    setPage(1);
+  };
+
   const { data, isLoading, isError, refetch } = useQuery<UsersResponse>({
-    queryKey: ['admin-users', debouncedSearch, roleFilter, page],
+    queryKey: ['admin-users', debouncedSearch, roleFilter, page, sortBy, sortOrder],
     queryFn: async () => {
-      const params: Record<string, string | number> = { page, limit };
+      const params: Record<string, string | number> = { page, limit, sortBy, sortOrder };
       if (debouncedSearch) params.search = debouncedSearch;
       if (roleFilter) params.role = roleFilter;
       const res = await apiClient.get('/admin/users', { params });
@@ -99,7 +111,13 @@ export default function UsersPage() {
             </button>
           </div>
         ) : (
-          <UserTable users={users} onRefresh={() => refetch()} />
+          <UserTable
+            users={users}
+            onRefresh={() => refetch()}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+          />
         )}
       </div>
 

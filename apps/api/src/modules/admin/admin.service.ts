@@ -64,6 +64,8 @@ export class AdminService {
     category?: string;
     page?: number;
     limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }) {
     const { page, limit, skip } = this.safePagination(params.page, params.limit);
 
@@ -85,6 +87,10 @@ export class AdminService {
       where.category = { has: params.category };
     }
 
+    const allowedCharSort = ['createdAt', 'conversationCount', 'messageCount', 'name'];
+    const charSortBy = allowedCharSort.includes(params.sortBy ?? '') ? params.sortBy! : 'createdAt';
+    const charSortOrder = params.sortOrder === 'asc' ? 'asc' : 'desc';
+
     const [characters, total] = await Promise.all([
       this.prisma.character.findMany({
         where,
@@ -92,7 +98,7 @@ export class AdminService {
           media: { where: { type: 'profile' }, take: 1 },
           creator: { select: { id: true, username: true, email: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [charSortBy]: charSortOrder },
         skip,
         take: limit,
       }),
@@ -325,6 +331,8 @@ export class AdminService {
     role?: string;
     page?: number;
     limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }) {
     const { page, limit, skip } = this.safePagination(params.page, params.limit);
 
@@ -342,6 +350,10 @@ export class AdminService {
     if (params.role) {
       where.role = params.role;
     }
+
+    const allowedSortFields = ['createdAt', 'credits', 'email', 'role', 'lastLoginAt'];
+    const sortBy = allowedSortFields.includes(params.sortBy ?? '') ? params.sortBy! : 'createdAt';
+    const sortOrder = params.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
@@ -361,7 +373,7 @@ export class AdminService {
           createdAt: true,
           lastLoginAt: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortBy]: sortOrder },
         skip,
         take: limit,
       }),

@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
+import { SortableHeader } from '@/components/common/SortableHeader';
 import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
 
@@ -33,6 +34,9 @@ export interface AdminUser {
 interface UserTableProps {
   users: AdminUser[];
   onRefresh: () => void;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
 }
 
 function formatDate(dateStr: string): string {
@@ -236,7 +240,9 @@ function ActionMenu({
 
 // ── Table ─────────────────────────────────────────────────
 
-export function UserTable({ users, onRefresh }: UserTableProps) {
+export function UserTable({ users, onRefresh, sortBy = 'createdAt', sortOrder = 'desc', onSort }: UserTableProps) {
+  const handleSort = (field: string) => onSort?.(field);
+
   if (users.length === 0) {
     return (
       <div className="text-center py-16">
@@ -250,21 +256,13 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
       <table className="w-full text-left">
         <thead>
           <tr className="border-b border-zinc-800">
-            <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-              User
-            </th>
-            <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-              Role
-            </th>
+            <SortableHeader label="User" field="email" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} className="px-4" />
+            <SortableHeader label="Role" field="role" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} className="px-4" />
             <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
               Status
             </th>
-            <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider text-right">
-              Credits
-            </th>
-            <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-              Joined
-            </th>
+            <SortableHeader label="Credits" field="credits" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} className="px-4 text-right" />
+            <SortableHeader label="Joined" field="createdAt" currentSort={sortBy} currentOrder={sortOrder} onSort={handleSort} className="px-4" />
             <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider w-10" />
           </tr>
         </thead>

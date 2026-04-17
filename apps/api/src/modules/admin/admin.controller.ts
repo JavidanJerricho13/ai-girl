@@ -40,6 +40,8 @@ export class AdminController {
     @Query('category') category?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
   ) {
     return this.adminService.getCharacters({
       search,
@@ -47,6 +49,8 @@ export class AdminController {
       category,
       page,
       limit,
+      sortBy,
+      sortOrder,
     });
   }
 
@@ -155,8 +159,10 @@ export class AdminController {
     @Query('role') role?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
   ) {
-    return this.adminService.getUsers({ search, role, page, limit });
+    return this.adminService.getUsers({ search, role, page, limit, sortBy, sortOrder });
   }
 
   @Get('users/:id')
