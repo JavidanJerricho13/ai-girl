@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { SidebarNav } from './SidebarNav';
 import { TopBar } from './TopBar';
 import { DailyRewardBanner } from '@/components/credits/DailyRewardBanner';
+import { FirstPurchaseOffer } from '@/components/credits/FirstPurchaseOffer';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -29,8 +30,8 @@ export function AppShell({ children }: AppShellProps) {
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
 
-      {/* Fires once per (app) mount; renders only if a reward is granted. */}
       <DailyRewardBanner />
+      <FirstPurchaseOffer />
     </div>
   );
 }

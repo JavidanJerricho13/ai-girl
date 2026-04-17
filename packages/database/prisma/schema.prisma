@@ -51,6 +51,8 @@ model User {
   // one-off profile-completion bonuses (see CreditRewardsService).
   lastDailyRewardAt DateTime?
   bonusesClaimed    String[] @default([]) // e.g. ["email_verified", "avatar_added"]
+  loginStreak       Int      @default(0)   // consecutive days with at least one daily claim
+  lastStreakDate    DateTime?              // UTC date of last streak-eligible login
 
   // Age verification / NSFW compliance
   dob         DateTime? // Date of birth for age gate

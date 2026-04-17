@@ -11,6 +11,7 @@ import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreditsService } from './credits.service';
 import { CreditRewardsService } from './credit-rewards.service';
+import { PrismaService } from '../../common/services/prisma.service';
 
 @Controller('credits')
 @UseGuards(JwtAuthGuard)
@@ -18,6 +19,7 @@ export class CreditsController {
   constructor(
     private readonly credits: CreditsService,
     private readonly rewards: CreditRewardsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Get('balance')
@@ -49,5 +51,26 @@ export class CreditsController {
   async claimProfileBonuses(@Req() req: Request) {
     const user = (req as any).user;
     return this.rewards.grantPendingProfileBonuses(user.id);
+  }
+
+  /**
+   * Check if the user is eligible for the first-purchase 50% off offer.
+   * Criteria: zero PURCHASE transactions AND at least 3 logins tracked
+   * in UserActivity.
+   */
+  @Get('first-purchase-check')
+  async firstPurchaseCheck(@Req() req: Request) {
+    const user = (req as any).user;
+
+    const purchaseCount = await this.prisma.transaction.count({
+      where: { userId: user.id, type: 'PURCHASE' },
+    });
+    if (purchaseCount > 0) return { eligible: false };
+
+    const loginCount = await this.prisma.userActivity.count({
+      where: { userId: user.id, action: 'login' },
+    });
+
+    return { eligible: loginCount >= 3 };
   }
 }

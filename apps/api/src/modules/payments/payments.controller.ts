@@ -3,15 +3,19 @@ import {
   Post,
   Body,
   Headers,
+  Req,
   ForbiddenException,
   BadRequestException,
   UseGuards,
   Get,
   Logger,
+  RawBodyRequest,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { timingSafeEqual } from 'crypto';
+import type { Request } from 'express';
 import { RevenueCatService } from './revenuecat.service';
+import { StripeService } from './stripe.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 
@@ -21,6 +25,7 @@ export class PaymentsController {
 
   constructor(
     private revenueCatService: RevenueCatService,
+    private stripeService: StripeService,
     private configService: ConfigService,
   ) {}
 
@@ -78,6 +83,67 @@ export class PaymentsController {
    * - 403 (not 401) because there's no challenge / negotiate step; the
    *   request is simply rejected.
    */
+  // ── Stripe ──────────────────────────────────────────────
+
+  /**
+   * Create a Stripe Checkout Session. Returns the hosted checkout URL
+   * so the web client can redirect to Stripe's PCI-compliant payment page.
+   */
+  @Post('stripe/checkout')
+  @UseGuards(JwtAuthGuard)
+  async createStripeCheckout(
+    @GetUser('id') userId: string,
+    @Body()
+    body: {
+      productKey: string;
+      successUrl: string;
+      cancelUrl: string;
+      messageId?: string;
+      couponId?: string;
+    },
+  ) {
+    return this.stripeService.createCheckoutSession({
+      userId,
+      productKey: body.productKey as any,
+      successUrl: body.successUrl,
+      cancelUrl: body.cancelUrl,
+      messageId: body.messageId,
+      couponId: body.couponId,
+    });
+  }
+
+  /**
+   * Stripe webhook. Signature is verified against STRIPE_WEBHOOK_SECRET
+   * by the Stripe SDK — no manual HMAC needed.
+   *
+   * IMPORTANT: this endpoint must receive the RAW body (not parsed JSON)
+   * for signature verification to work. NestJS body parsing must be
+   * disabled for this route — see main.ts rawBody config.
+   */
+  @Post('stripe/webhook')
+  async handleStripeWebhook(
+    @Headers('stripe-signature') signature: string,
+    @Req() req: RawBodyRequest<Request>,
+  ) {
+    const rawBody = req.rawBody;
+    if (!rawBody) {
+      throw new BadRequestException('Missing raw body for Stripe signature verification');
+    }
+
+    let event;
+    try {
+      event = this.stripeService.constructWebhookEvent(rawBody, signature);
+    } catch (err: any) {
+      this.logger.warn(`Stripe webhook signature invalid: ${err.message}`);
+      throw new ForbiddenException('Invalid Stripe signature');
+    }
+
+    await this.stripeService.handleWebhookEvent(event);
+    return { received: true };
+  }
+
+  // ── Internal helpers ──────────────────────────────────────
+
   private verifyWebhookAuth(authorization: string | undefined): void {
     const secret = this.configService.get<string>('REVENUECAT_WEBHOOK_AUTH_KEY');
 

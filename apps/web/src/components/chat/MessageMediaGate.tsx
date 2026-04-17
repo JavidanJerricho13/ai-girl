@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Lock, Zap, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { Lock, Zap, Loader2, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
@@ -105,6 +106,14 @@ export function MessageMediaGate({
           <Zap size={12} />
           Unlock for 1 credit
         </span>
+        <Link
+          href="/credits"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-100 text-xs font-medium hover:bg-amber-500/30 transition-colors"
+        >
+          <Crown size={12} />
+          Go Premium — unlock all
+        </Link>
         {error ? (
           <p className="text-[11px] text-red-300 mt-1">{error}</p>
         ) : null}

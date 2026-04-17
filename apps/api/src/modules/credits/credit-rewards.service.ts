@@ -2,8 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CreditsService } from './credits.service';
 
-export const DAILY_REWARD_AMOUNT = 10;
+export const DAILY_REWARD_AMOUNT = 5;
+export const DAILY_REWARD_CAP = 50; // Don't grant if balance already ≥ this.
 export const PROFILE_BONUS_AMOUNT = 5;
+export const STREAK_DAY_7_PREMIUM_DAYS = 7; // Day 7 reward: 1-week premium trial.
 
 // Each bonus key maps to (a) the amount and (b) an eligibility check against
 // the current User row. Idempotency is stored in User.bonusesClaimed[], so
@@ -27,9 +29,9 @@ export interface DailyRewardResult {
   granted: boolean;
   amount: number;
   newBalance: number;
-  // Unix epoch ms when the next daily reward becomes available (start of
-  // tomorrow UTC). Frontend uses this to show a countdown / disable the CTA.
   nextAvailableAt: number;
+  streak: number;
+  streakReward?: string; // e.g. "7-day premium trial"
 }
 
 export interface ProfileBonusResult {
@@ -61,23 +63,26 @@ export class CreditRewardsService {
   async grantDailyReward(userId: string): Promise<DailyRewardResult> {
     const now = new Date();
     const todayStart = startOfDayUtc(now);
+    const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
     const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
-    // `select` is cast loosely so we can reference new schema fields before
-    // `prisma generate` has run against them; cast the result to the shape
-    // we actually expect.
     const user = (await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { credits: true, lastDailyRewardAt: true } as any,
-    })) as unknown as { credits: number; lastDailyRewardAt: Date | null } | null;
+      select: {
+        credits: true,
+        lastDailyRewardAt: true,
+        loginStreak: true,
+        lastStreakDate: true,
+      } as any,
+    })) as unknown as {
+      credits: number;
+      lastDailyRewardAt: Date | null;
+      loginStreak: number;
+      lastStreakDate: Date | null;
+    } | null;
 
     if (!user) {
-      return {
-        granted: false,
-        amount: 0,
-        newBalance: 0,
-        nextAvailableAt: tomorrowStart.getTime(),
-      };
+      return { granted: false, amount: 0, newBalance: 0, nextAvailableAt: tomorrowStart.getTime(), streak: 0 };
     }
 
     const lastClaim = user.lastDailyRewardAt;
@@ -87,42 +92,73 @@ export class CreditRewardsService {
         amount: 0,
         newBalance: user.credits,
         nextAvailableAt: tomorrowStart.getTime(),
+        streak: user.loginStreak ?? 0,
       };
     }
 
-    // Atomic credit grant + timestamp update. We do the timestamp inside the
-    // same transaction so two concurrent calls can't both succeed (the second
-    // would see the stamp inside the tx).
+    // Cap: skip credit grant if balance already at cap (but still bump streak).
+    const grantCredits = user.credits < DAILY_REWARD_CAP;
+
+    // Streak: if last streak date was yesterday, continue the streak.
+    // Otherwise, reset to 1.
+    const prevStreak = user.loginStreak ?? 0;
+    const lastStreak = user.lastStreakDate;
+    const isConsecutive =
+      lastStreak &&
+      startOfDayUtc(lastStreak).getTime() === yesterdayStart.getTime();
+    const newStreak = isConsecutive ? prevStreak + 1 : 1;
+
     const result = await this.prisma.$transaction(async (tx) => {
       const fresh = (await tx.user.findUnique({
         where: { id: userId },
         select: { credits: true, lastDailyRewardAt: true } as any,
       })) as unknown as { credits: number; lastDailyRewardAt: Date | null } | null;
       if (fresh?.lastDailyRewardAt && new Date(fresh.lastDailyRewardAt) >= todayStart) {
-        return { granted: false, newBalance: fresh.credits };
+        return { granted: false, newBalance: fresh?.credits ?? 0, streak: newStreak };
+      }
+
+      const updateData: any = {
+        lastDailyRewardAt: now,
+        loginStreak: newStreak,
+        lastStreakDate: todayStart,
+      };
+      if (grantCredits) {
+        updateData.credits = { increment: DAILY_REWARD_AMOUNT };
       }
 
       const updated = await tx.user.update({
         where: { id: userId },
-        data: {
-          credits: { increment: DAILY_REWARD_AMOUNT },
-          ...({ lastDailyRewardAt: now } as any),
-        },
+        data: updateData,
         select: { credits: true },
       });
 
-      await tx.transaction.create({
-        data: {
-          userId,
-          type: 'EARN',
-          amount: DAILY_REWARD_AMOUNT,
-          balance: updated.credits,
-          description: 'Daily login reward',
-          metadata: { source: 'daily_reward', day: todayStart.toISOString() },
-        },
-      });
+      if (grantCredits) {
+        await tx.transaction.create({
+          data: {
+            userId,
+            type: 'EARN',
+            amount: DAILY_REWARD_AMOUNT,
+            balance: updated.credits,
+            description: 'Daily login reward',
+            metadata: { source: 'daily_reward', day: todayStart.toISOString(), streak: newStreak },
+          },
+        });
+      }
 
-      return { granted: true, newBalance: updated.credits };
+      // Day 7 streak reward: 1-week premium trial.
+      let streakReward: string | undefined;
+      if (newStreak === 7) {
+        const premiumUntil = new Date();
+        premiumUntil.setDate(premiumUntil.getDate() + STREAK_DAY_7_PREMIUM_DAYS);
+        await tx.user.update({
+          where: { id: userId },
+          data: { isPremium: true, premiumUntil },
+        });
+        streakReward = `${STREAK_DAY_7_PREMIUM_DAYS}-day premium trial`;
+        this.logger.log(`Day 7 streak reward: granted ${streakReward} to user ${userId}`);
+      }
+
+      return { granted: grantCredits, newBalance: updated.credits, streak: newStreak, streakReward };
     });
 
     return {
@@ -130,6 +166,8 @@ export class CreditRewardsService {
       amount: result.granted ? DAILY_REWARD_AMOUNT : 0,
       newBalance: result.newBalance,
       nextAvailableAt: tomorrowStart.getTime(),
+      streak: result.streak,
+      streakReward: result.streakReward,
     };
   }
 
