@@ -12,6 +12,7 @@ import {
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { AudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { websocketService, VideoState } from '../../services/websocket.service';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiService } from '../../services/api.service';
 
 const { width, height } = Dimensions.get('window');
@@ -286,9 +287,11 @@ export default function VideoCallScreen() {
   );
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top', 'bottom']}>
     <View style={styles.container}>
       {!isInCall ? renderPreCallScreen() : renderInCallScreen()}
     </View>
+    </SafeAreaView>
   );
 }
 

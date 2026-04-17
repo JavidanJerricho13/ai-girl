@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { revenueCatService, CreditPackage } from '../../services/revenuecat.service';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/auth.store';
 import { apiService } from '../../services/api.service';
 
@@ -206,14 +207,17 @@ export default function SubscriptionScreen() {
 
   if (isLoading) {
     return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#8B7FFF" />
         <Text style={styles.loadingText}>Loading packages...</Text>
       </View>
+      </SafeAreaView>
     );
   }
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
@@ -265,6 +269,7 @@ export default function SubscriptionScreen() {
         </Text>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

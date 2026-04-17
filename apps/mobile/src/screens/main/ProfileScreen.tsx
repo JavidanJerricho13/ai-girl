@@ -18,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useAuthStore } from '../../store/auth.store';
 import { apiService } from '../../services/api.service';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedCreditBadge } from '../../components/AnimatedCreditBadge';
 import { StreakWidget } from '../../components/profile/StreakWidget';
 
@@ -69,14 +70,17 @@ export default function ProfileScreen() {
 
   if (!user) {
     return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyTitle}>Profile</Text>
         <Text style={styles.emptySubtitle}>Please log in</Text>
       </View>
+      </SafeAreaView>
     );
   }
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
@@ -203,6 +207,7 @@ export default function ProfileScreen() {
         <Text style={styles.version}>Version 1.0.0</Text>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

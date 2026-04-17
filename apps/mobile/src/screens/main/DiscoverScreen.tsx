@@ -15,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { apiService } from '../../services/api.service';
 import { CharacterCardSkeleton } from '../../components/LoadingSkeleton';
 import { AnimatedCreditBadge } from '../../components/AnimatedCreditBadge';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { HeroCard } from '../../components/discover/HeroCard';
 import { BentoCard } from '../../components/discover/BentoCard';
 
@@ -221,6 +222,7 @@ export default function DiscoverScreen() {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -306,6 +308,7 @@ export default function DiscoverScreen() {
         />
       )}
     </View>
+    </SafeAreaView>
   );
 }
 

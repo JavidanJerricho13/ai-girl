@@ -8,6 +8,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiService } from '../../services/api.service';
 
 interface Transaction {
@@ -87,14 +88,17 @@ export default function TransactionHistoryScreen() {
 
   if (isLoading) {
     return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#8B7FFF" />
       </View>
+      </SafeAreaView>
     );
   }
 
   if (isError) {
     return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
       <View style={styles.centered}>
         <Text style={styles.errorIcon}>!</Text>
         <Text style={styles.errorTitle}>Failed to load transactions</Text>
@@ -105,10 +109,12 @@ export default function TransactionHistoryScreen() {
           Tap to retry
         </Text>
       </View>
+      </SafeAreaView>
     );
   }
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
     <View style={styles.container}>
       <FlatList
         data={transactions ?? []}
@@ -137,6 +143,7 @@ export default function TransactionHistoryScreen() {
         }
       />
     </View>
+    </SafeAreaView>
   );
 }
 

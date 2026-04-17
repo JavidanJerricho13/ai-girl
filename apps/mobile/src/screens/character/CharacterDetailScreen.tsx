@@ -15,6 +15,7 @@ import {
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api.service';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConversationData } from '../../components/ConversationItem';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -418,6 +419,7 @@ export default function CharacterDetailScreen() {
   const heroImage = selectedMedia || profileImage;
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#111827' }} edges={['top']}>
     <View style={styles.container}>
       {/* Floating header buttons */}
       <View style={styles.floatingHeader}>
@@ -581,6 +583,7 @@ export default function CharacterDetailScreen() {
         </View>
       </ScrollView>
     </View>
+    </SafeAreaView>
   );
 }
 

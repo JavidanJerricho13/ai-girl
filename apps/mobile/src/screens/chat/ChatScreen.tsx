@@ -25,6 +25,7 @@ import { ChatStarters } from '../../components/chat/ChatStarters';
 import { TypingIndicator } from '../../components/chat/TypingIndicator';
 import { CreditWarning } from '../../components/chat/CreditWarning';
 import { RelationshipBar } from '../../components/chat/RelationshipBar';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { haptic } from '../../utils/haptics';
 import { analytics } from '../../lib/analytics';
 
@@ -330,6 +331,7 @@ export default function ChatScreen() {
 
   if (isLoadingHistory) {
     return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -350,11 +352,13 @@ export default function ChatScreen() {
           ))}
         </View>
       </KeyboardAvoidingView>
+      </SafeAreaView>
     );
   }
 
   return (
     <>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -424,6 +428,7 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+    </SafeAreaView>
 
     <ImageViewer
       data={imageViewerData}

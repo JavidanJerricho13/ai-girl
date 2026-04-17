@@ -11,6 +11,7 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api.service';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ConversationItem,
   ConversationData,
@@ -72,6 +73,7 @@ export default function ConversationsScreen() {
   // --- Loading state ---
   if (isLoading) {
     return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Chats</Text>
@@ -83,12 +85,14 @@ export default function ConversationsScreen() {
           contentContainerStyle={styles.listContent}
         />
       </View>
+      </SafeAreaView>
     );
   }
 
   // --- Error state ---
   if (isError) {
     return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Chats</Text>
@@ -108,10 +112,12 @@ export default function ConversationsScreen() {
           </TouchableOpacity>
         </View>
       </View>
+      </SafeAreaView>
     );
   }
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -188,6 +194,7 @@ export default function ConversationsScreen() {
         }
       />
     </View>
+    </SafeAreaView>
   );
 }
 

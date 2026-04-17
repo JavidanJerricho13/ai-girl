@@ -16,6 +16,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiService } from '../../services/api.service';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ImageViewer, ImageViewerData } from '../../components/media/ImageViewer';
 import { GalleryCard as GalleryCardComponent } from '../../components/media/GalleryCard';
 
@@ -497,6 +498,7 @@ export default function GalleryScreen() {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0B1E' }} edges={['top']}>
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -583,6 +585,7 @@ export default function GalleryScreen() {
         onClose={() => setImageViewerData(null)}
       />
     </View>
+    </SafeAreaView>
   );
 }
 
