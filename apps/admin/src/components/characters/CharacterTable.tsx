@@ -9,6 +9,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SortableHeader } from '@/components/common/SortableHeader';
 import apiClient from '@/lib/api-client';
 
 export interface AdminCharacter {
@@ -34,6 +35,9 @@ interface CharacterTableProps {
   onToggleAll: () => void;
   allSelected: boolean;
   onRefresh: () => void;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
 }
 
 function formatDate(dateStr: string): string {
@@ -56,6 +60,9 @@ export function CharacterTable({
   onToggleAll,
   allSelected,
   onRefresh,
+  sortBy = 'createdAt',
+  sortOrder = 'desc',
+  onSort,
 }: CharacterTableProps) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
@@ -109,21 +116,15 @@ export function CharacterTable({
                 className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-600 focus:ring-offset-0"
               />
             </th>
-            <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-              Character
-            </th>
+            <SortableHeader label="Character" field="name" currentSort={sortBy} currentOrder={sortOrder} onSort={onSort || (() => {})} className="px-4" />
             <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
               Creator
             </th>
             <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
               Status
             </th>
-            <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider text-right">
-              Stats
-            </th>
-            <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-              Created
-            </th>
+            <SortableHeader label="Stats" field="conversationCount" currentSort={sortBy} currentOrder={sortOrder} onSort={onSort || (() => {})} className="px-4 text-right" />
+            <SortableHeader label="Created" field="createdAt" currentSort={sortBy} currentOrder={sortOrder} onSort={onSort || (() => {})} className="px-4" />
             <th className="px-4 py-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider w-28" />
           </tr>
         </thead>
