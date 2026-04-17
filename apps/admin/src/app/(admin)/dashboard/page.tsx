@@ -40,6 +40,15 @@ export default function DashboardPage() {
     refetchInterval: 60_000, // Auto-refresh every 60s
   });
 
+  const { data: tokenUsage } = useQuery<any>({
+    queryKey: ['admin-token-usage'],
+    queryFn: async () => {
+      const res = await apiClient.get('/admin/analytics/tokens');
+      return res.data;
+    },
+    refetchInterval: 120_000,
+  });
+
   const { data: recentTx } = useQuery<any[]>({
     queryKey: ['admin-recent-tx'],
     queryFn: async () => {
@@ -92,6 +101,45 @@ export default function DashboardPage() {
           icon={<ImageIcon size={18} />}
         />
       </div>
+
+      {/* LLM Token Usage */}
+      {tokenUsage && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <div className="bg-zinc-900/50 backdrop-blur-md border border-zinc-800 rounded-xl p-5">
+            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Total Tokens</h3>
+            <p className="text-2xl font-bold text-white font-mono">{fmt(tokenUsage.totalTokens)}</p>
+            <p className="text-[10px] text-zinc-500 mt-1">{fmt(tokenUsage.totalMessages)} messages</p>
+          </div>
+          <div className="bg-zinc-900/50 backdrop-blur-md border border-zinc-800 rounded-xl p-5">
+            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">By Model</h3>
+            <div className="space-y-2">
+              {(tokenUsage.byModel ?? []).map((m: any) => (
+                <div key={m.model} className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-300">{m.model}</span>
+                  <span className="text-xs font-mono text-zinc-400">{fmt(m.tokens)} tok</span>
+                </div>
+              ))}
+              {(!tokenUsage.byModel || tokenUsage.byModel.length === 0) && (
+                <p className="text-xs text-zinc-600">No data yet</p>
+              )}
+            </div>
+          </div>
+          <div className="bg-zinc-900/50 backdrop-blur-md border border-zinc-800 rounded-xl p-5">
+            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Top Users by Cost</h3>
+            <div className="space-y-2">
+              {(tokenUsage.topUsers ?? []).map((u: any) => (
+                <div key={u.userId} className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-300 truncate max-w-[140px]">{u.username || u.email}</span>
+                  <span className="text-xs font-mono text-zinc-400">{fmt(u.tokens)}</span>
+                </div>
+              ))}
+              {(!tokenUsage.topUsers || tokenUsage.topUsers.length === 0) && (
+                <p className="text-xs text-zinc-600">No data yet</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom row: System Health + Recent Transactions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

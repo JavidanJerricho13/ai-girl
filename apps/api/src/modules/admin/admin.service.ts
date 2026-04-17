@@ -663,6 +663,66 @@ export class AdminService {
     };
   }
 
+  async getTokenUsage() {
+    const [totalTokens, tokensByModel, topCharacters, topUsers] = await Promise.all([
+      // Total tokens
+      this.prisma.message.aggregate({
+        where: { tokensUsed: { not: null } },
+        _sum: { tokensUsed: true },
+        _count: true,
+      }),
+      // Tokens by model
+      this.prisma.message.groupBy({
+        by: ['modelUsed'],
+        where: { tokensUsed: { not: null }, modelUsed: { not: null } },
+        _sum: { tokensUsed: true },
+        _count: true,
+      }),
+      // Top 5 characters by token usage
+      this.prisma.message.groupBy({
+        by: ['conversationId'],
+        where: { tokensUsed: { not: null }, role: 'assistant' },
+        _sum: { tokensUsed: true },
+        orderBy: { _sum: { tokensUsed: 'desc' } },
+        take: 5,
+      }),
+      // Top 5 users by token usage
+      this.prisma.message.groupBy({
+        by: ['userId'],
+        where: { tokensUsed: { not: null }, role: 'assistant', userId: { not: null } },
+        _sum: { tokensUsed: true },
+        orderBy: { _sum: { tokensUsed: 'desc' } },
+        take: 5,
+      }),
+    ]);
+
+    // Enrich top users with email
+    const userIds = topUsers.map(u => u.userId).filter(Boolean) as string[];
+    const users = userIds.length > 0
+      ? await this.prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, email: true, username: true },
+        })
+      : [];
+    const userMap = new Map(users.map(u => [u.id, u]));
+
+    return {
+      totalTokens: totalTokens._sum.tokensUsed ?? 0,
+      totalMessages: totalTokens._count,
+      byModel: tokensByModel.map(m => ({
+        model: m.modelUsed ?? 'unknown',
+        tokens: m._sum.tokensUsed ?? 0,
+        messages: m._count,
+      })),
+      topUsers: topUsers.map(u => ({
+        userId: u.userId,
+        email: userMap.get(u.userId!)?.email ?? u.userId,
+        username: userMap.get(u.userId!)?.username,
+        tokens: u._sum.tokensUsed ?? 0,
+      })),
+    };
+  }
+
   // ── Audit Logs Viewer ─────────────────────────
 
   async getAuditLogs(params: {

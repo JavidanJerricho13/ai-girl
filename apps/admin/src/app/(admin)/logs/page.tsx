@@ -16,8 +16,11 @@ import {
   ImageIcon,
   Mic,
   Coins,
+  Download,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
+import { downloadCSV } from '@/lib/csv';
 
 // ── Types ────────────────────────────────────────────────
 
@@ -116,6 +119,36 @@ export default function TransactionLogsPage() {
               {total.toLocaleString()} transactions
             </p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={async () => {
+              try {
+                const res = await apiClient.get('/admin/transactions', { params: { limit: 100 } });
+                const txs = res.data?.data ?? [];
+                downloadCSV(
+                  txs.map((t: any) => ({
+                    id: t.id,
+                    user: t.user?.email ?? t.userId,
+                    type: t.type,
+                    amount: t.amount,
+                    balance: t.balance,
+                    description: t.description,
+                    createdAt: t.createdAt,
+                  })),
+                  'ethereal-transactions',
+                );
+                toast.success(`Exported ${txs.length} transactions`);
+              } catch {
+                toast.error('Export failed');
+              }
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
         </div>
 
         {/* Pricing info */}

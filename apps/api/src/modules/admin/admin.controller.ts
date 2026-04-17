@@ -246,6 +246,11 @@ export class AdminController {
     return this.adminService.getAnalyticsOverview();
   }
 
+  @Get('analytics/tokens')
+  async getTokenUsage() {
+    return this.adminService.getTokenUsage();
+  }
+
   // ── Audit Logs ──────────────────────────────
 
   @Get('audit-logs')

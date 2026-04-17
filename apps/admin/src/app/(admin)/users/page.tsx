@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { UserCog, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { UserCog, Loader2, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
+import { downloadCSV } from '@/lib/csv';
 import { UserFilterBar } from '@/components/users/UserFilterBar';
 import { UserTable, AdminUser } from '@/components/users/UserTable';
 
@@ -65,6 +67,29 @@ export default function UsersPage() {
   const totalPages = data?.totalPages ?? 1;
   const total = data?.total ?? 0;
 
+  const handleExport = async () => {
+    try {
+      const res = await apiClient.get('/admin/users', { params: { limit: 100 } });
+      const users = res.data?.data ?? [];
+      downloadCSV(
+        users.map((u: AdminUser) => ({
+          id: u.id,
+          email: u.email,
+          username: u.username ?? '',
+          role: u.role,
+          credits: u.credits,
+          isPremium: u.isPremium,
+          isActive: u.isActive,
+          createdAt: u.createdAt,
+        })),
+        'ethereal-users',
+      );
+      toast.success(`Exported ${users.length} users`);
+    } catch {
+      toast.error('Export failed');
+    }
+  };
+
   return (
     <div>
       {/* Header */}
@@ -80,6 +105,13 @@ export default function UsersPage() {
             </p>
           </div>
         </div>
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+        >
+          <Download size={14} />
+          Export CSV
+        </button>
       </div>
 
       {/* Filters */}
