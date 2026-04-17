@@ -114,7 +114,7 @@ export class GroqService {
     | { kind: 'delta'; content: string }
     | { kind: 'tools'; toolCalls: ToolCall[] }
   > {
-    const stream = await this.client.chat.completions.create({
+    const stream: AsyncIterable<any> = await this.client.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: params.systemPrompt },
@@ -125,7 +125,7 @@ export class GroqService {
       tools: params.tools?.length ? (params.tools as any) : undefined,
       tool_choice: params.tools?.length ? 'auto' : undefined,
       stream: true,
-    } as any);
+    } as any) as any;
 
     const toolCallBuffer: Record<number, { id: string; name: string; args: string }> = {};
 
