@@ -44,8 +44,12 @@ class RevenueCatService {
       
       this.isInitialized = true;
       console.log('✅ RevenueCat initialized');
-    } catch (error) {
-      console.error('Failed to initialize RevenueCat:', error);
+    } catch (error: any) {
+      // Expected in Expo Go — native store not available
+      if (__DEV__) {
+        console.log('[RevenueCat] Skipped in Expo Go:', error?.message?.slice(0, 80));
+        return;
+      }
       throw error;
     }
   }

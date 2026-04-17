@@ -1,8 +1,8 @@
 import { io, Socket } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const WS_URL = __DEV__ 
-  ? 'http://localhost:3001' 
+const WS_URL = __DEV__
+  ? 'http://192.168.31.98:3001'
   : 'https://api.ethereal.app';
 
 export interface Message {

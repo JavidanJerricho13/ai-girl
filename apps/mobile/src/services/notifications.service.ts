@@ -54,8 +54,9 @@ class NotificationService {
       });
 
       console.log('[Notifications] Registered with token:', this.token.substring(0, 20) + '...');
-    } catch (err) {
-      console.error('[Notifications] Token registration failed:', err);
+    } catch (err: any) {
+      // Expected in Expo Go — projectId not available without EAS build
+      if (__DEV__) console.log('[Notifications] Skipped in dev:', err?.message?.slice(0, 60));
       return null;
     }
 
