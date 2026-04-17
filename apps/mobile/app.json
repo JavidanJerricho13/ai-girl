@@ -41,7 +41,6 @@
     "platforms": ["ios", "android"],
     "plugins": [
       "expo-audio",
-      "expo-haptics",
       "expo-notifications"
     ]
   }
