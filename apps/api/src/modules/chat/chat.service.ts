@@ -4,6 +4,7 @@ import { RAGService } from '../memory/services/rag.service';
 import { ConversationsService } from '../conversations/conversations.service';
 import { CharactersService } from '../characters/characters.service';
 import { PromptBuilderService } from '../characters/services/prompt-builder.service';
+import { ModerationService } from '../moderation/moderation.service';
 import {
   ModelRouterService,
   computeChunkDelayMs,
@@ -131,6 +132,7 @@ export class ChatService {
     private conversationsService: ConversationsService,
     private charactersService: CharactersService,
     private promptBuilder: PromptBuilderService,
+    private moderationService: ModerationService,
     private creditsService: CreditsService,
     private chatMediaService: ChatMediaService,
   ) {}
@@ -169,9 +171,29 @@ export class ChatService {
       delta: -CHAT_MESSAGE_COST,
     };
 
-    // 2. Pull conversation + character (now includes active LoRA).
+    // 2. Pull conversation + character.
     const conversation = await this.conversationsService.findOne(conversationId, userId);
     const character: any = conversation.character;
+    const user: any = (conversation as any).user ?? {};
+
+    // Determine NSFW pass-through via double-key check.
+    const nsfwEnabled = this.moderationService.nsfwAllowed(
+      { nsfwEnabled: Boolean(user.nsfwEnabled), ageVerified: Boolean(user.ageVerified) },
+      { nsfwAllowed: Boolean(character.nsfwAllowed) },
+    );
+
+    // 2b. LAYER 1 — Pre-generation text moderation on user input.
+    const inputCheck = await this.moderationService.checkUserInput({
+      content,
+      userId,
+      conversationId,
+      nsfwEnabled,
+    });
+    if (inputCheck.action === 'blocked') {
+      yield { kind: 'text', chunk: "I can't respond to that. Let's talk about something else?" };
+      yield { kind: 'complete' };
+      return;
+    }
 
     // 3. Record the user's message first so RAG can see it.
     await this.prisma.message.create({
@@ -234,6 +256,21 @@ export class ChatService {
       systemPrompt,
       tools: [REQUEST_MEDIA_TOOL],
     });
+
+    // 6b. LAYER 2 — Post-generation text moderation on AI response.
+    if (llm.content) {
+      const outputCheck = await this.moderationService.checkAiResponse({
+        content: llm.content,
+        conversationId,
+        nsfwEnabled,
+      });
+      if (outputCheck.action === 'blocked') {
+        // Replace the problematic response with a safe fallback.
+        llm.content = "Hmm, I got a bit lost there. What were you saying?";
+        // Clear any tool calls — they might also be inappropriate.
+        llm.toolCalls = [];
+      }
+    }
 
     // 7. Parse the tool call (if any) and kick off generation in parallel so
     //    the text can stream while the media is rendering. Only the first

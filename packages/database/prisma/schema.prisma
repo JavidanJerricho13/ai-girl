@@ -52,6 +52,10 @@ model User {
   lastDailyRewardAt DateTime?
   bonusesClaimed    String[] @default([]) // e.g. ["email_verified", "avatar_added"]
 
+  // Age verification / NSFW compliance
+  dob         DateTime? // Date of birth for age gate
+  ageVerified Boolean   @default(false) // true after DOB + checkbox confirmation
+
   // Metadata
   isActive    Boolean   @default(true)
   isVerified  Boolean   @default(false)
@@ -118,15 +122,20 @@ model Character {
   //   playfulness:  0 = grave, deliberate  → 100 = teasing, quick-witted
   warmth      Int @default(50)
   playfulness Int @default(50)
-  
+
   // Voice & Media
   voiceId       String?
   voiceProvider String? // elevenlabs | azure | google
   loraModelId   String?
-  
+
+  // Visual DNA — locked seed + base prompt for consistent image generation.
+  // Set by Character Studio on first visual pick, reused for gallery auto-gen.
+  metadata Json? // { seed: number, basePrompt: string, visualDescriptor: string }
+
   // Discovery
-  isPublic  Boolean  @default(false)
-  isPremium Boolean  @default(false)
+  isPublic    Boolean @default(false)
+  isPremium   Boolean @default(false)
+  nsfwAllowed Boolean @default(false) // paired with User.nsfwEnabled for double-key
   category  String[] // romance, friendship, mentor, etc.
   tags      String[]
   

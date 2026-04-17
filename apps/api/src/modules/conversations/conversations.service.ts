@@ -70,7 +70,7 @@ export class ConversationsService {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id },
       include: {
-        user: { select: { timezone: true } },
+        user: { select: { timezone: true, nsfwEnabled: true, ageVerified: true } as any },
         character: {
           include: {
             media: true,

@@ -16,11 +16,15 @@ import { AdminGuard } from './admin.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles, UserRole } from '../../common/decorators/roles.decorator';
 import { AdminService } from './admin.service';
+import { CharacterGeneratorService } from '../characters/services/character-generator.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class AdminController {
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private characterGenerator: CharacterGeneratorService,
+  ) {}
 
   @Get('health')
   getHealth() {
@@ -88,6 +92,57 @@ export class AdminController {
   @Post('characters/:id/regenerate-greeting')
   async regenerateGreeting(@Param('id') id: string) {
     return this.adminService.regenerateGreeting(id);
+  }
+
+  // ── Character Studio ─────────────────────────
+
+  /** Step 1: LLM generates persona from archetype + keywords. */
+  @Post('studio/generate-persona')
+  async studioGeneratePersona(
+    @Request() req,
+    @Body() body: { archetype: string; keywords: string[] },
+  ) {
+    return this.characterGenerator.generatePersona({
+      archetype: body.archetype,
+      keywords: body.keywords,
+      createdBy: req.user.id,
+    });
+  }
+
+  /** Step 2: Create character row from generated persona. */
+  @Post('studio/create-character')
+  async studioCreateCharacter(
+    @Request() req,
+    @Body() body: any,
+  ) {
+    const id = await this.characterGenerator.createFromPersona(body, req.user.id);
+    return { characterId: id };
+  }
+
+  /** Step 3: Generate candidate profile images. */
+  @Post('studio/generate-candidates')
+  async studioGenerateCandidates(
+    @Body() body: { visualDescriptor: string; count?: number },
+  ) {
+    return this.characterGenerator.generateCandidateImages(
+      body.visualDescriptor,
+      body.count ?? 4,
+    );
+  }
+
+  /** Step 4: Lock Visual DNA with the admin-selected candidate. */
+  @Post('studio/lock-visual-dna')
+  async studioLockVisualDNA(
+    @Body() body: { characterId: string; seed: number; basePrompt: string; imageUrl: string },
+  ) {
+    await this.characterGenerator.lockVisualDNA(body);
+    return { success: true };
+  }
+
+  /** Step 5: Auto-generate 12 gallery images from locked DNA. */
+  @Post('studio/generate-gallery')
+  async studioGenerateGallery(@Body() body: { characterId: string }) {
+    return this.characterGenerator.generateGallery(body.characterId);
   }
 
   // ── Users ────────────────────────────────────

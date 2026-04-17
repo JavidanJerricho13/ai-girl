@@ -16,11 +16,13 @@ import { MemoryModule } from '../memory/memory.module';
 import { ConversationsModule } from '../conversations/conversations.module';
 import { CharactersModule } from '../characters/characters.module';
 import { CreditsModule } from '../credits/credits.module';
+import { ModerationModule } from '../moderation/moderation.module';
 
 @Module({
   imports: [
     ConfigModule,
     MemoryModule,
+    ModerationModule,
     forwardRef(() => ConversationsModule),
     CharactersModule,
     CreditsModule,
