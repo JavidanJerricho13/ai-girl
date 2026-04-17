@@ -28,6 +28,8 @@ interface ActiveCharacter {
 
 type GenerationType = 'image' | 'voice';
 
+export type ConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'offline';
+
 interface ChatWindowProps {
   messages: Message[];
   isTyping: boolean;
@@ -40,6 +42,7 @@ interface ChatWindowProps {
   onMediaUnlocked?: (messageId: string, payload: { imageUrl?: string; audioUrl?: string }) => void;
   disabled?: boolean;
   character?: ActiveCharacter | null;
+  connectionState?: ConnectionState;
 }
 
 // Threshold for the "running low" warning. Matches the backend chat cost
@@ -55,6 +58,7 @@ export function ChatWindow({
   onMediaUnlocked,
   disabled,
   character,
+  connectionState = 'connected',
 }: ChatWindowProps) {
   const { user, updateUser } = useAuthStore();
   const [generationModal, setGenerationModal] = useState<GenerationType | null>(
@@ -100,7 +104,24 @@ export function ChatWindow({
           )}
           <div>
             <p className="text-sm font-medium text-white">{name}</p>
-            <p className="text-xs text-emerald-400">Online</p>
+            <div className="flex items-center gap-1.5">
+              <div className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                connectionState === 'connected' ? 'bg-emerald-400' :
+                connectionState === 'reconnecting' ? 'bg-amber-400 animate-pulse' :
+                connectionState === 'offline' ? 'bg-red-400' :
+                'bg-gray-400 animate-pulse'
+              }`} />
+              <p className={`text-xs ${
+                connectionState === 'connected' ? 'text-emerald-400' :
+                connectionState === 'reconnecting' ? 'text-amber-400' :
+                connectionState === 'offline' ? 'text-red-400' :
+                'text-gray-400'
+              }`}>
+                {connectionState === 'connected' ? 'Online' :
+                 connectionState === 'reconnecting' ? 'Reconnecting' :
+                 connectionState === 'offline' ? 'Offline' : 'Connecting'}
+              </p>
+            </div>
           </div>
         </div>
         {/* Credit balance is present in the top nav already; duplicating it

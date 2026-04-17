@@ -243,39 +243,47 @@ export class ChatService {
       },
     );
 
-    // 5. Typing jitter — delay before the first token lands so the response
-    //    feels written, not flashed. Also surfaces a 'typing' event so the
-    //    UI can display the indicator at a natural pace.
+    // 5. Brief thinking delay so the response feels human, not instant.
     const thinkingMs = computeThinkingDelayMs(content.length);
     yield { kind: 'typing', durationMs: thinkingMs };
     await sleep(thinkingMs);
 
-    // 6. One non-streaming LLM call with the request_media tool available.
-    const llm = await this.modelRouter.generateWithTools({
+    // 6. STREAMING LLM call with tool support. Text deltas arrive in
+    //    real-time; tool calls are buffered and yielded at the end.
+    let streamedText = '';
+    let toolCalls: import('../../integrations/groq/groq.service').ToolCall[] = [];
+
+    for await (const event of this.modelRouter.streamWithTools({
       prompt: content,
       systemPrompt,
       tools: [REQUEST_MEDIA_TOOL],
-    });
+    })) {
+      if (event.kind === 'delta') {
+        streamedText += event.content;
+        yield { kind: 'text', chunk: event.content };
+      } else if (event.kind === 'tools') {
+        toolCalls = event.toolCalls;
+      }
+    }
 
     // 6b. LAYER 2 — Post-generation text moderation on AI response.
-    if (llm.content) {
+    //     Moderation runs after streaming completes. If blocked, emit a
+    //     retraction chunk that replaces the streamed content in the UI.
+    let finalText = streamedText;
+    if (finalText) {
       const outputCheck = await this.moderationService.checkAiResponse({
-        content: llm.content,
+        content: finalText,
         conversationId,
         nsfwEnabled,
       });
       if (outputCheck.action === 'blocked') {
-        // Replace the problematic response with a safe fallback.
-        llm.content = "Hmm, I got a bit lost there. What were you saying?";
-        // Clear any tool calls — they might also be inappropriate.
-        llm.toolCalls = [];
+        finalText = "Hmm, I got a bit lost there. What were you saying?";
+        toolCalls = [];
       }
     }
 
-    // 7. Parse the tool call (if any) and kick off generation in parallel so
-    //    the text can stream while the media is rendering. Only the first
-    //    request_media call is honoured — stacking media per turn is noise.
-    const mediaArgs = extractMediaArgs(llm.toolCalls);
+    // 7. Parse the tool call (if any) and kick off generation in parallel.
+    const mediaArgs = extractMediaArgs(toolCalls);
     const isPremium = await this.isUserPremium(userId);
 
     const mediaPromise = mediaArgs
@@ -292,52 +300,24 @@ export class ChatService {
         })
       : null;
 
-    // 8. Maybe split into two "texts" (double-text effect). If the model
-    //    only produced a tool call and no content, fall back to the caption.
-    const textBody = (llm.content || mediaArgs?.caption || '').trim();
-    const parts = maybeSplitForDoubleText(textBody);
-    const isDoubleText = parts.length > 1;
+    // 8. If no text was streamed (tool-only response), emit the caption.
+    const textBody = (finalText || mediaArgs?.caption || '').trim();
 
     const modelUsed = (await this.modelRouter.detectLanguage(content)) === 'az' ? 'openai' : 'groq';
     const latencyMs = Date.now() - startTime;
-    let lastMessageId = '';
 
-    // Helper to stream one part and persist it as a Message row.
-    const emitPart = async function* (
-      this: ChatService,
-      text: string,
-      isFirst: boolean,
-    ): AsyncGenerator<ChatEvent> {
-      const totalMs = computeTypingDelayMs(text.length);
-      yield { kind: 'typing', durationMs: totalMs };
-
-      const chunks = chunkForTyping(text);
-      for (const chunk of chunks) {
-        yield { kind: 'text', chunk };
-        await sleep(computeChunkDelayMs(totalMs, chunks.length));
-      }
-
-      const msg = await this.prisma.message.create({
-        data: {
-          conversationId,
-          role: 'assistant',
-          content: text,
-          language: conversation.language,
-          modelUsed,
-          latencyMs: isFirst ? latencyMs : undefined,
-        },
-      });
-      lastMessageId = msg.id;
-    }.bind(this);
-
-    // Emit part 1. If double-texting, signal the mid-turn break so the
-    // frontend can start a new bubble without clearing the typing state.
-    yield* emitPart(parts[0], true);
-    if (isDoubleText) {
-      yield { kind: 'part-complete', messageId: lastMessageId };
-      await sleep(DOUBLE_TEXT_GAP_MS);
-      yield* emitPart(parts[1], false);
-    }
+    // Persist the assistant message.
+    const msg = await this.prisma.message.create({
+      data: {
+        conversationId,
+        role: 'assistant',
+        content: textBody,
+        language: conversation.language,
+        modelUsed,
+        latencyMs,
+      },
+    });
+    const lastMessageId = msg.id;
 
     const assistantMessage = { id: lastMessageId };
 

@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap } from 'lucide-react';
+import { ChevronDown, Zap } from 'lucide-react';
 import { TypingIndicator } from './TypingIndicator';
 import { InlineImage } from './InlineImage';
 import { AudioPlayer } from './AudioPlayer';
@@ -25,16 +25,12 @@ interface Message {
 interface MessageListProps {
   messages: Message[];
   isTyping: boolean;
-  // Called after a successful unlock so the parent can update the message
-  // row in state (flip isLocked → false, patch URLs if server replaced them).
   onMediaUnlocked?: (messageId: string, payload: { imageUrl?: string; audioUrl?: string }) => void;
 }
 
 const COST_BADGE_DURATION_MS = 1200;
 
 function CostBadge({ cost }: { cost: number }) {
-  // Fire-and-forget: shows briefly on mount then fades away. Keeps the
-  // economy visible without cluttering the thread permanently.
   const [visible, setVisible] = useState(true);
   useEffect(() => {
     const t = setTimeout(() => setVisible(false), COST_BADGE_DURATION_MS);
@@ -58,7 +54,7 @@ function CostBadge({ cost }: { cost: number }) {
   );
 }
 
-function MessageBubble({
+const MessageBubble = memo(function MessageBubble({
   message,
   onImageClick,
   showCost,
@@ -75,20 +71,16 @@ function MessageBubble({
   const hasImage = !!message.imageUrl;
   const hasAudio = !!message.audioUrl;
   const hasMedia = hasImage || hasAudio;
-  // Free-tier viewer + assistant message flagged as locked = render the gate
-  // instead of the real media. Premium users always bypass.
   const showGate = !isPremium && !isUser && Boolean(message.isLocked) && hasMedia;
   const mediaOnly = hasMedia && !hasText;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+      initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }}
+      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
       className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}
     >
-      {/* Cost badge sits outside the bubble, to the left of user messages,
-          where it reads as metadata rather than content. */}
       {isUser && showCost ? <CostBadge cost={1} /> : null}
 
       <div
@@ -145,24 +137,50 @@ function MessageBubble({
       </div>
     </motion.div>
   );
-}
+}, (prev, next) => (
+  prev.message.id === next.message.id &&
+  prev.message.content === next.message.content &&
+  prev.message.imageUrl === next.message.imageUrl &&
+  prev.message.audioUrl === next.message.audioUrl &&
+  prev.message.isLocked === next.message.isLocked &&
+  prev.showCost === next.showCost
+));
 
 export function MessageList({ messages, isTyping, onMediaUnlocked }: MessageListProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const [lightboxImage, setLightboxImage] =
     useState<LightboxImageData | null>(null);
+  const [userScrolledUp, setUserScrolledUp] = useState(false);
 
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    setUserScrolledUp(!atBottom);
+  }, []);
+
+  // Auto-scroll only if user is at the bottom
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+    if (!userScrolledUp) {
+      endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isTyping, userScrolledUp]);
 
-  // Show the cost badge only on the *most recent* user message, so scrolling
-  // back through history doesn't flash a pulse of badges at the user.
+  const scrollToBottom = useCallback(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setUserScrolledUp(false);
+  }, []);
+
   const lastUserId = [...messages].reverse().find((m) => m.role === 'user')?.id;
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-3">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto px-4 py-6 space-y-3 relative"
+      >
         {messages.map((message) => (
           <MessageBubble
             key={message.id}
@@ -185,6 +203,22 @@ export function MessageList({ messages, isTyping, onMediaUnlocked }: MessageList
 
         <div ref={endRef} />
       </div>
+
+      {/* "New messages" jump-to-bottom button */}
+      <AnimatePresence>
+        {userScrolledUp && (
+          <motion.button
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            onClick={scrollToBottom}
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 glass-accent rounded-full px-4 py-2 text-xs text-white shadow-lg"
+          >
+            <ChevronDown size={14} />
+            New messages
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {lightboxImage && (
         <ImageLightbox

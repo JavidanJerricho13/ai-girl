@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
-import { ChatWindow } from '@/components/chat/ChatWindow';
+import { ChatWindow, type ConnectionState } from '@/components/chat/ChatWindow';
 import { ConversationList } from '@/components/chat/ConversationList';
 import { CharacterPickerModal } from '@/components/chat/CharacterPickerModal';
 import { useAuthStore } from '@/store/auth.store';
@@ -32,7 +32,7 @@ export default function ChatPage() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(null);
@@ -45,8 +45,10 @@ export default function ChatPage() {
     const newSocket = io('http://localhost:3001');
     setSocket(newSocket);
 
-    newSocket.on('connect', () => setIsConnected(true));
-    newSocket.on('disconnect', () => setIsConnected(false));
+    newSocket.on('connect', () => setConnectionState('connected'));
+    newSocket.on('disconnect', () => setConnectionState('reconnecting'));
+    newSocket.io.on('reconnect_failed' as any, () => setConnectionState('offline'));
+    newSocket.io.on('reconnect_attempt' as any, () => setConnectionState('reconnecting'));
 
     // Server-driven "she's thinking" indicator. We already flip isTyping to
     // true optimistically on send; this event is mostly informative (and
@@ -254,7 +256,7 @@ export default function ChatPage() {
 
   const handleSendMessage = useCallback(
     (content: string) => {
-      if (!socket || !isConnected || !selectedConversationId || !user) return;
+      if (!socket || connectionState !== 'connected' || !selectedConversationId || !user) return;
 
       setMessages((prev) => [
         ...prev,
@@ -270,7 +272,7 @@ export default function ChatPage() {
         content,
       });
     },
-    [socket, isConnected, selectedConversationId, user],
+    [socket, connectionState, selectedConversationId, user],
   );
 
   const handleMediaUnlocked = useCallback(
@@ -323,8 +325,9 @@ export default function ChatPage() {
             onSendMessage={handleSendMessage}
             onMediaGenerated={handleMediaGenerated}
             onMediaUnlocked={handleMediaUnlocked}
-            disabled={!isConnected || isTyping}
+            disabled={connectionState !== 'connected' || isTyping}
             character={activeCharacter}
+            connectionState={connectionState}
           />
         ) : (
           <div className="h-full flex items-center justify-center bg-gray-900">

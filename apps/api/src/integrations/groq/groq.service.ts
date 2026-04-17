@@ -100,6 +100,74 @@ export class GroqService {
       }
     }
   }
+
+  /**
+   * Stream text deltas in real-time while buffering tool calls.
+   * Yields `{ kind: 'delta', content }` for text tokens and
+   * `{ kind: 'tools', toolCalls }` once at the end if any tools were invoked.
+   */
+  async *streamWithTools(params: {
+    systemPrompt: string;
+    userMessage: string;
+    tools?: ToolDefinition[];
+  }): AsyncGenerator<
+    | { kind: 'delta'; content: string }
+    | { kind: 'tools'; toolCalls: ToolCall[] }
+  > {
+    const stream = await this.client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: params.systemPrompt },
+        { role: 'user', content: params.userMessage },
+      ],
+      temperature: 0.85,
+      max_tokens: 1024,
+      tools: params.tools?.length ? (params.tools as any) : undefined,
+      tool_choice: params.tools?.length ? 'auto' : undefined,
+      stream: true,
+    } as any);
+
+    const toolCallBuffer: Record<number, { id: string; name: string; args: string }> = {};
+
+    for await (const chunk of stream) {
+      const delta: any = (chunk as any).choices?.[0]?.delta;
+      if (!delta) continue;
+
+      if (delta.content) {
+        yield { kind: 'delta', content: delta.content };
+      }
+
+      if (delta.tool_calls) {
+        for (const tc of delta.tool_calls) {
+          const idx = tc.index ?? 0;
+          if (!toolCallBuffer[idx]) {
+            toolCallBuffer[idx] = { id: tc.id || '', name: '', args: '' };
+          }
+          if (tc.function?.name) {
+            toolCallBuffer[idx].name = tc.function.name;
+          }
+          if (tc.id) {
+            toolCallBuffer[idx].id = tc.id;
+          }
+          if (tc.function?.arguments) {
+            toolCallBuffer[idx].args += tc.function.arguments;
+          }
+        }
+      }
+    }
+
+    const toolCalls: ToolCall[] = Object.values(toolCallBuffer)
+      .filter((tc) => tc.name)
+      .map((tc) => ({
+        id: tc.id,
+        name: tc.name,
+        arguments: safeParseJson(tc.args),
+      }));
+
+    if (toolCalls.length > 0) {
+      yield { kind: 'tools', toolCalls };
+    }
+  }
 }
 
 function safeParseJson(input: unknown): Record<string, any> {

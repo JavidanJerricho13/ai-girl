@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { GroqService, type LlmResult, type ToolDefinition } from '../../../integrations/groq/groq.service';
+import { GroqService, type LlmResult, type ToolDefinition, type ToolCall } from '../../../integrations/groq/groq.service';
 import { OpenAIService } from '../../../integrations/openai/openai.service';
 
 // Personality is stored on Character as two 0–100 axes (simplified from
@@ -126,8 +126,47 @@ export class ModelRouterService {
   }
 
   /**
+   * Stream text deltas in real-time with tool support. Yields delta events
+   * as tokens arrive from the LLM, then a tools event at the end if any
+   * tool calls were made. Falls back to non-streaming for Azerbaijani
+   * (OpenAI path) until OpenAI streaming with tools is wired.
+   */
+  async *streamWithTools(params: {
+    prompt: string;
+    systemPrompt: string;
+    tools?: ToolDefinition[];
+  }): AsyncGenerator<
+    | { kind: 'delta'; content: string }
+    | { kind: 'tools'; toolCalls: ToolCall[] }
+  > {
+    const language = await this.detectLanguage(params.prompt);
+
+    if (language === 'az') {
+      // Fallback: non-streaming for OpenAI/AZ path, emit as single delta
+      const result = await this.openAIService.generateWithTools({
+        systemPrompt: params.systemPrompt,
+        userMessage: params.prompt,
+        tools: params.tools,
+      });
+      if (result.content) {
+        yield { kind: 'delta', content: result.content };
+      }
+      if (result.toolCalls.length > 0) {
+        yield { kind: 'tools', toolCalls: result.toolCalls };
+      }
+      return;
+    }
+
+    yield* this.groqService.streamWithTools({
+      systemPrompt: params.systemPrompt,
+      userMessage: params.prompt,
+      tools: params.tools,
+    });
+  }
+
+  /**
    * Kept for paths that don't need tools (e.g. memory summarization).
-   * chat.service uses generateWithTools above.
+   * chat.service uses streamWithTools above for real-time streaming.
    */
   async *generateResponse(params: {
     prompt: string;
