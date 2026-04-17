@@ -13,6 +13,7 @@ import {
   ScrollView,
   Share,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiService } from '../../services/api.service';
@@ -81,7 +82,7 @@ function GalleryCard({
       >
         <View style={styles.voiceCard}>
           <View style={styles.voiceIconCircle}>
-            <Text style={styles.voiceIcon}>🔊</Text>
+            <Ionicons name="volume-high" size={20} color="#F59E0B" />
           </View>
           <Text style={styles.voiceLabel}>Voice</Text>
           {item.prompt && (
@@ -192,7 +193,7 @@ function MediaDetailModal({
           ) : item.resultUrl ? (
             <View style={detailStyles.audioContainer}>
               <View style={detailStyles.audioIconCircle}>
-                <Text style={detailStyles.audioIcon}>🔊</Text>
+                <Ionicons name="volume-high" size={20} color="#F59E0B" />
               </View>
               <Text style={detailStyles.audioLabel}>Generated Voice</Text>
             </View>
@@ -478,7 +479,7 @@ export default function GalleryScreen() {
     return (
       <View style={styles.emptyContainer}>
         <View style={styles.emptyIconCircle}>
-          <Text style={styles.emptyIcon}>🖼️</Text>
+          <Ionicons name="images-outline" size={40} color="#52525B" />
         </View>
         <Text style={styles.emptyTitle}>No media yet</Text>
         <Text style={styles.emptySubtitle}>

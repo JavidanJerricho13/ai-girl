@@ -11,11 +11,28 @@ import TransactionHistoryScreen from '../screens/profile/TransactionHistoryScree
 
 const Stack = createStackNavigator<MainStackParamList>();
 
+const darkHeader = {
+  headerShown: true,
+  headerStyle: {
+    backgroundColor: '#0A0B1E',
+    shadowColor: 'transparent',
+    elevation: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  headerTintColor: '#F5F3FF',
+  headerTitleStyle: {
+    fontWeight: '600' as const,
+    fontSize: 16,
+  },
+};
+
 export function MainStackNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
+        cardStyle: { backgroundColor: '#0A0B1E' },
       }}
     >
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
@@ -26,22 +43,12 @@ export function MainStackNavigator() {
       <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
-        options={{
-          headerShown: true,
-          title: 'Edit Profile',
-          headerStyle: { backgroundColor: '#F9FAFB' },
-          headerTintColor: '#1F2937',
-        }}
+        options={{ ...darkHeader, title: 'Edit Profile' }}
       />
       <Stack.Screen
         name="TransactionHistory"
         component={TransactionHistoryScreen}
-        options={{
-          headerShown: true,
-          title: 'Transaction History',
-          headerStyle: { backgroundColor: '#F9FAFB' },
-          headerTintColor: '#1F2937',
-        }}
+        options={{ ...darkHeader, title: 'Transaction History' }}
       />
     </Stack.Navigator>
   );

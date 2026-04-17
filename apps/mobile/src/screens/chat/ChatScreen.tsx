@@ -283,9 +283,12 @@ export default function ChatScreen() {
               style={styles.audioButton}
               onPress={() => playAudio(item.audioUrl!, item.id)}
             >
-              <Text style={styles.audioButtonText}>
-                {playingAudioId === item.id ? '⏸️ Pause' : '▶️ Play Audio'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name={playingAudioId === item.id ? 'pause' : 'play'} size={14} color="#8B7FFF" />
+                <Text style={styles.audioButtonText}>
+                  {playingAudioId === item.id ? 'Pause' : 'Play'}
+                </Text>
+              </View>
             </TouchableOpacity>
           )}
 
@@ -336,7 +339,7 @@ export default function ChatScreen() {
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -363,7 +366,7 @@ export default function ChatScreen() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -402,7 +405,7 @@ export default function ChatScreen() {
 
       <View style={styles.inputContainer}>
         <TouchableOpacity style={styles.iconButton} onPress={requestImageGeneration}>
-          <Text style={styles.iconButtonText}>🖼️</Text>
+          <Ionicons name="image-outline" size={20} color="#F5F3FF" />
         </TouchableOpacity>
 
         <TextInput

@@ -167,7 +167,7 @@ function StatCard({
 }) {
   return (
     <View style={statStyles.card}>
-      <Text style={statStyles.icon}>{icon}</Text>
+      <Ionicons name={icon as any} size={18} color="#8B7FFF" style={{ marginBottom: 4 }} />
       <Text style={statStyles.value}>{value}</Text>
       <Text style={statStyles.label}>{label}</Text>
     </View>
@@ -183,7 +183,6 @@ const statStyles = StyleSheet.create({
     borderRadius: 12,
     marginHorizontal: 4,
   },
-  icon: { fontSize: 18, marginBottom: 4 },
   value: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', marginBottom: 2 },
   label: { fontSize: 11, color: '#9CA3AF' },
 });
@@ -521,17 +520,17 @@ export default function CharacterDetailScreen() {
           {/* Stats */}
           <View style={styles.statsRow}>
             <StatCard
-              icon="💬"
+              icon="chatbubble"
               value={formatCount(character.conversationCount)}
               label="Chats"
             />
             <StatCard
-              icon="✉️"
+              icon="mail"
               value={formatCount(character.messageCount)}
               label="Messages"
             />
             <StatCard
-              icon="⭐"
+              icon="star"
               value={
                 character.avgRating != null
                   ? character.avgRating.toFixed(1)
@@ -570,7 +569,10 @@ export default function CharacterDetailScreen() {
             {isStarting ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.primaryButtonText}>💬  Start Chatting</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="chatbubble" size={18} color="#FFFFFF" />
+                <Text style={styles.primaryButtonText}>Start Chatting</Text>
+              </View>
             )}
           </TouchableOpacity>
 
@@ -579,7 +581,10 @@ export default function CharacterDetailScreen() {
             onPress={handleVideoCall}
             activeOpacity={0.7}
           >
-            <Text style={styles.secondaryButtonText}>📹  Video Call</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ionicons name="videocam" size={18} color="#D1D5DB" />
+              <Text style={styles.secondaryButtonText}>Video Call</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </ScrollView>

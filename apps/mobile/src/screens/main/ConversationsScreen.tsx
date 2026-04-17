@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api.service';
@@ -169,7 +170,7 @@ export default function ConversationsScreen() {
         ListEmptyComponent={
           <View style={styles.centerContainer}>
             <View style={styles.emptyIconContainer}>
-              <Text style={styles.emptyIcon}>💬</Text>
+              <Ionicons name="chatbubbles-outline" size={40} color="#52525B" />
             </View>
             <Text style={styles.emptyTitle}>
               {searchQuery ? 'No results found' : 'No chats yet'}

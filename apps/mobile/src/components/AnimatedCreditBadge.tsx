@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -38,7 +39,7 @@ export function AnimatedCreditBadge({ onPress }: AnimatedCreditBadgeProps) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <Animated.View style={[styles.badge, animatedStyle]}>
-        <Text style={styles.icon}>💎</Text>
+        <Ionicons name="diamond" size={16} color="#8B7FFF" />
         <Text style={styles.credits}>{user.credits.toLocaleString()}</Text>
       </Animated.View>
     </TouchableOpacity>
@@ -54,9 +55,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     gap: 6,
-  },
-  icon: {
-    fontSize: 16,
   },
   credits: {
     color: '#FFFFFF',

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface StreakWidgetProps {
   currentStreak: number;
@@ -28,7 +29,7 @@ export function StreakWidget({ currentStreak, lastStreakDate }: StreakWidgetProp
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.streakEmoji}>🔥</Text>
+        <Ionicons name="flame" size={20} color="#F59E0B" />
         <Text style={styles.streakCount}>Day {currentStreak}</Text>
         <Text style={styles.streakLabel}>Streak</Text>
       </View>
@@ -90,9 +91,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 16,
-  },
-  streakEmoji: {
-    fontSize: 20,
   },
   streakCount: {
     fontSize: 18,

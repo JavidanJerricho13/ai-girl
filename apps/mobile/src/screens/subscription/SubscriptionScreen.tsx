@@ -9,6 +9,7 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { revenueCatService, CreditPackage } from '../../services/revenuecat.service';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -147,7 +148,10 @@ export default function SubscriptionScreen() {
       >
         {isPopular && (
           <View style={styles.popularBadge}>
-            <Text style={styles.popularBadgeText}>🔥 MOST POPULAR</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="flame" size={12} color="#FFF" />
+              <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
+            </View>
           </View>
         )}
 

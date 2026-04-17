@@ -9,6 +9,7 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { AudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { websocketService, VideoState } from '../../services/websocket.service';
@@ -180,7 +181,7 @@ export default function VideoCallScreen() {
           style={[styles.controlButton, cameraEnabled && styles.controlButtonActive]}
           onPress={toggleCamera}
         >
-          <Text style={styles.controlIcon}>{cameraEnabled ? '📹' : '📷'}</Text>
+          <Ionicons name={cameraEnabled ? 'videocam' : 'videocam-off'} size={24} color="#FFF" />
           <Text style={styles.controlLabel}>Camera</Text>
         </TouchableOpacity>
 
@@ -188,7 +189,7 @@ export default function VideoCallScreen() {
           style={[styles.controlButton, micEnabled && styles.controlButtonActive]}
           onPress={toggleMic}
         >
-          <Text style={styles.controlIcon}>{micEnabled ? '🎤' : '🔇'}</Text>
+          <Ionicons name={micEnabled ? 'mic' : 'mic-off'} size={24} color="#FFF" />
           <Text style={styles.controlLabel}>Mic</Text>
         </TouchableOpacity>
       </View>
@@ -202,7 +203,7 @@ export default function VideoCallScreen() {
           <ActivityIndicator color="#FFFFFF" />
         ) : (
           <>
-            <Text style={styles.startCallIcon}>📞</Text>
+            <Ionicons name="call" size={24} color="#FFFFFF" />
             <Text style={styles.startCallText}>Start Video Call</Text>
           </>
         )}
@@ -226,7 +227,7 @@ export default function VideoCallScreen() {
           />
         ) : (
           <View style={styles.videoPlaceholder}>
-            <Text style={styles.videoPlaceholderText}>📹</Text>
+            <Ionicons name="videocam" size={80} color="#6B7280" />
           </View>
         )}
         
@@ -261,18 +262,18 @@ export default function VideoCallScreen() {
           style={[styles.callControlButton, !micEnabled && styles.callControlButtonInactive]}
           onPress={toggleMic}
         >
-          <Text style={styles.callControlIcon}>{micEnabled ? '🎤' : '🔇'}</Text>
+          <Ionicons name={micEnabled ? 'mic' : 'mic-off'} size={24} color="#FFF" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.endCallButton} onPress={endCall}>
-          <Text style={styles.endCallIcon}>📞</Text>
+          <Ionicons name="call" size={28} color="#FFF" />
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.callControlButton, !cameraEnabled && styles.callControlButtonInactive]}
           onPress={toggleCamera}
         >
-          <Text style={styles.callControlIcon}>{cameraEnabled ? '📹' : '📷'}</Text>
+          <Ionicons name={cameraEnabled ? 'videocam' : 'videocam-off'} size={24} color="#FFF" />
         </TouchableOpacity>
       </View>
 
