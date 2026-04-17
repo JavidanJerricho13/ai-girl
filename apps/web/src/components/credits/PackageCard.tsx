@@ -1,8 +1,10 @@
 import { Sparkles } from 'lucide-react';
+import apiClient from '@/lib/api-client';
 
 interface PackageCardProps {
   credits: number;
   price: string;
+  priceId: string;
   label: string;
   highlight?: boolean;
 }
@@ -10,9 +12,25 @@ interface PackageCardProps {
 export function PackageCard({
   credits,
   price,
+  priceId,
   label,
   highlight = false,
 }: PackageCardProps) {
+  const handlePurchase = async () => {
+    try {
+      const { data } = await apiClient.post('/payments/stripe/checkout', {
+        priceId,
+        successUrl: `${window.location.origin}/credits?purchased=true`,
+        cancelUrl: `${window.location.origin}/credits`,
+      });
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      }
+    } catch (err) {
+      console.error('Failed to start checkout:', err);
+    }
+  };
+
   return (
     <div
       className={`rounded-xl p-5 text-center border transition-colors ${
@@ -39,11 +57,11 @@ export function PackageCard({
       </p>
       <p className="text-sm text-gray-400 mb-4">credits</p>
       <button
-        disabled
-        className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors cursor-not-allowed ${
+        onClick={handlePurchase}
+        className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors ${
           highlight
-            ? 'bg-purple-600/60 text-purple-200'
-            : 'bg-gray-700/60 text-gray-300'
+            ? 'bg-purple-600 hover:bg-purple-700 text-white'
+            : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
         }`}
       >
         {price}

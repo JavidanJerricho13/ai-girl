@@ -4,15 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Mail,
   Calendar,
-  CreditCard,
-  Settings,
+  Clock,
   LogOut,
   ChevronRight,
   MessageSquare,
   ImageIcon,
   Users,
+  Settings,
 } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
@@ -37,6 +36,12 @@ interface CreditsInfo {
   premiumUntil: string | null;
 }
 
+interface UserStats {
+  conversations: number;
+  messages: number;
+  images: number;
+}
+
 export default function ProfilePage() {
   const { user, clear: clearAuth } = useAuthStore();
   const router = useRouter();
@@ -57,14 +62,19 @@ export default function ProfilePage() {
     },
   });
 
+  const { data: stats } = useQuery<UserStats>({
+    queryKey: ['user-stats'],
+    queryFn: async () => {
+      const res = await apiClient.get('/users/stats');
+      return res.data;
+    },
+  });
+
   const handleLogout = async () => {
-    // /auth/logout clears the HttpOnly cookies server-side; clearAuth drops
-    // the client mirror. Both are needed — one without the other leaves
-    // either the server or the store thinking the user is still signed in.
     try {
-      await apiClient.post('/api/auth/logout');
+      await apiClient.post('/auth/logout');
     } catch {
-      // Non-blocking: even if the call fails, we clear locally.
+      // Non-blocking
     }
     clearAuth();
     router.push('/login');
@@ -85,135 +95,115 @@ export default function ProfilePage() {
 
   const initial = displayName.charAt(0).toUpperCase();
 
+  const statItems = [
+    { icon: Users, value: stats?.conversations ?? 0, label: 'Characters', color: 'text-blue-400' },
+    { icon: MessageSquare, value: stats?.messages ?? 0, label: 'Messages', color: 'text-emerald-400' },
+    { icon: ImageIcon, value: stats?.images ?? 0, label: 'Images', color: 'text-amber-400' },
+  ];
+
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Profile header */}
+    <div className="max-w-lg mx-auto space-y-8 py-8">
+      {/* Avatar + Name — centered editorial layout */}
       {profileLoading ? (
-        <div className="flex items-center gap-5 mb-8">
-          <div className="w-20 h-20 rounded-full bg-gray-800 animate-pulse shrink-0" />
-          <div className="space-y-2 flex-1">
-            <div className="h-6 w-40 bg-gray-800 rounded animate-pulse" />
-            <div className="h-4 w-56 bg-gray-800/60 rounded animate-pulse" />
-            <div className="h-4 w-36 bg-gray-800/60 rounded animate-pulse" />
-          </div>
+        <div className="text-center space-y-3">
+          <div className="w-24 h-24 rounded-full bg-gray-800 animate-pulse mx-auto" />
+          <div className="h-7 w-40 bg-gray-800 rounded mx-auto animate-pulse" />
+          <div className="h-4 w-56 bg-gray-800/60 rounded mx-auto animate-pulse" />
         </div>
       ) : (
-        <div className="flex items-center gap-5 mb-8">
+        <section className="text-center">
           {profile?.avatar ? (
             <img
               src={profile.avatar}
               alt={displayName}
-              className="w-20 h-20 rounded-full object-cover shrink-0"
+              className="w-24 h-24 rounded-full object-cover mx-auto mb-4 glass-accent"
             />
           ) : (
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-2xl font-bold text-white shrink-0">
+            <div className="w-24 h-24 rounded-full glass-accent flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
               {initial}
             </div>
           )}
-          <div className="min-w-0">
-            <div className="flex items-center gap-3 mb-1">
-              <h2 className="text-2xl font-semibold text-white truncate">
-                {displayName}
-              </h2>
-              {creditsInfo?.isPremium && (
-                <span className="text-[10px] font-semibold text-yellow-400 bg-yellow-900/30 px-2 py-0.5 rounded">
-                  PRO
-                </span>
+          <h1 className="font-display text-fluid-xl text-white">{displayName}</h1>
+          <p className="text-fluid-xs text-gray-500 mt-1">
+            <Calendar size={12} className="inline mr-1.5 -mt-0.5" />
+            Member since {memberSince}
+          </p>
+          {creditsInfo?.isPremium && (
+            <span className="inline-block mt-2 text-[10px] font-semibold text-yellow-400 bg-yellow-900/30 px-3 py-1 rounded-full">
+              PRO
+              {creditsInfo.premiumUntil && (
+                <> — expires {new Date(creditsInfo.premiumUntil).toLocaleDateString()}</>
               )}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-400 mt-0.5">
-              <Mail size={14} />
-              <span className="truncate">
-                {profile?.email ?? user?.email ?? '—'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
-              <Calendar size={14} />
-              <span>Member since {memberSince}</span>
-            </div>
-          </div>
-        </div>
+            </span>
+          )}
+        </section>
       )}
 
+      {/* Stats — horizontal scroll of glass cards */}
+      <section className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x">
+        {statItems.map(({ icon: Icon, value, label, color }) => (
+          <div key={label} className="snap-start shrink-0 w-28 glass-card rounded-xl p-4 text-center">
+            <Icon size={18} className={`${color} mx-auto mb-1.5`} />
+            <p className="text-lg font-semibold text-white">{value.toLocaleString()}</p>
+            <p className="text-fluid-xs text-gray-500">{label}</p>
+          </div>
+        ))}
+      </section>
+
       {/* Credits card */}
-      <Link
-        href="/credits"
-        className="block bg-gradient-to-r from-purple-900/30 to-indigo-900/30 border border-purple-700/30 rounded-xl p-5 mb-6 hover:from-purple-900/40 hover:to-indigo-900/40 transition-all group"
-      >
+      <section className="glass-accent rounded-2xl p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-400 mb-1">Current Balance</p>
-            <p className="text-3xl font-bold text-white">
-              {credits.toLocaleString()}{' '}
-              <span className="text-base font-normal text-gray-400">
-                credits
-              </span>
+            <p className="text-fluid-xs text-gray-400">Credit Balance</p>
+            <p className="text-fluid-lg font-semibold text-white">
+              {credits.toLocaleString()}
+              <span className="text-sm font-normal text-gray-400 ml-2">credits</span>
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-fluid-xs text-gray-500 mt-1">
               Chat = 1 · Image = 10 · Voice = 3
             </p>
           </div>
-          <div className="flex items-center gap-1 text-purple-400 text-sm font-medium group-hover:text-purple-300 transition-colors">
-            Buy More
-            <ChevronRight size={16} />
-          </div>
+          <Link
+            href="/credits"
+            className="text-sm text-lilac hover:text-lilac/80 transition-colors font-medium"
+          >
+            Top Up →
+          </Link>
         </div>
-      </Link>
+      </section>
 
-      {/* Activity summary */}
-      <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
-        Activity
-      </h3>
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg p-4 text-center">
-          <Users size={18} className="text-blue-400 mx-auto mb-1.5" />
-          <p className="text-lg font-semibold text-white">—</p>
-          <p className="text-xs text-gray-500">Characters</p>
-        </div>
-        <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg p-4 text-center">
-          <MessageSquare size={18} className="text-emerald-400 mx-auto mb-1.5" />
-          <p className="text-lg font-semibold text-white">—</p>
-          <p className="text-xs text-gray-500">Messages</p>
-        </div>
-        <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg p-4 text-center">
-          <ImageIcon size={18} className="text-amber-400 mx-auto mb-1.5" />
-          <p className="text-lg font-semibold text-white">—</p>
-          <p className="text-xs text-gray-500">Images</p>
-        </div>
-      </div>
-
-      {/* Menu items */}
-      <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl divide-y divide-gray-700/50">
+      {/* Menu — clean glass list */}
+      <section className="glass rounded-xl divide-y divide-white/5">
         <Link
           href="/credits"
-          className="flex items-center justify-between p-4 hover:bg-gray-800/60 transition-colors"
+          className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
         >
           <div className="flex items-center gap-3 text-gray-300">
-            <CreditCard size={18} />
+            <Clock size={18} />
             <span className="text-sm font-medium">Transaction History</span>
           </div>
           <ChevronRight size={16} className="text-gray-600" />
         </Link>
 
-        <button
-          disabled
-          className="flex items-center justify-between p-4 w-full opacity-50 cursor-not-allowed"
+        <Link
+          href="/settings"
+          className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
         >
           <div className="flex items-center gap-3 text-gray-300">
             <Settings size={18} />
             <span className="text-sm font-medium">Settings</span>
           </div>
           <ChevronRight size={16} className="text-gray-600" />
-        </button>
+        </Link>
 
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 p-4 w-full text-red-400 hover:bg-red-900/10 transition-colors"
+          className="flex items-center gap-3 p-4 w-full text-red-400 hover:bg-red-900/5 transition-colors"
         >
           <LogOut size={18} />
-          <span className="text-sm font-medium">Logout</span>
+          <span className="text-sm font-medium">Sign Out</span>
         </button>
-      </div>
+      </section>
     </div>
   );
 }

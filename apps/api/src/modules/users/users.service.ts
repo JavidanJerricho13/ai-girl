@@ -69,6 +69,19 @@ export class UsersService {
     });
   }
 
+  async getUserStats(userId: string) {
+    const [conversations, messages, images] = await Promise.all([
+      this.prisma.conversation.count({ where: { userId } }),
+      this.prisma.message.count({
+        where: { conversation: { userId }, role: 'user' },
+      }),
+      this.prisma.generationJob.count({
+        where: { userId, type: 'image', status: 'COMPLETED' },
+      }),
+    ]);
+    return { conversations, messages, images };
+  }
+
   async getUserCredits(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },

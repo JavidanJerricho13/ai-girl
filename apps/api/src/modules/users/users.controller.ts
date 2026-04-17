@@ -38,6 +38,11 @@ export class UsersController {
     return this.usersService.update(req.user.id, data);
   }
 
+  @Get('stats')
+  async getStats(@Request() req) {
+    return this.usersService.getUserStats(req.user.id);
+  }
+
   @Get('credits')
   async getCredits(@Request() req) {
     return this.usersService.getUserCredits(req.user.id);
