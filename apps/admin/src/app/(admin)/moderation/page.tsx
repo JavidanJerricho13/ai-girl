@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import {
@@ -340,9 +340,11 @@ function FlaggedCard({
 export default function ModerationPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('pending');
   const [page, setPage] = useState(1);
+  const [focusedIdx, setFocusedIdx] = useState(0);
   const queryClient = useQueryClient();
 
   useEffect(() => setPage(1), [activeTab]);
+  useEffect(() => setFocusedIdx(0), [activeTab, page]);
 
   // Pending characters (private = not yet approved)
   const pending = useQuery({
@@ -367,6 +369,65 @@ export default function ModerationPage() {
     },
     enabled: activeTab === 'flagged',
   });
+
+  // Keyboard shortcuts for moderation
+  const handleKeyboard = useCallback((e: KeyboardEvent) => {
+    // Don't trigger if user is typing in an input
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+    const items = activeTab === 'pending'
+      ? (pending.data?.data ?? [])
+      : (flagged.data?.data ?? []);
+    const maxIdx = items.length - 1;
+
+    switch (e.key.toLowerCase()) {
+      case 'j': // Next item
+        e.preventDefault();
+        setFocusedIdx(prev => Math.min(prev + 1, maxIdx));
+        break;
+      case 'k': // Previous item
+        e.preventDefault();
+        setFocusedIdx(prev => Math.max(prev - 1, 0));
+        break;
+      case 'a': // Approve/Allow
+        e.preventDefault();
+        if (activeTab === 'pending' && items[focusedIdx]) {
+          const char = items[focusedIdx] as PendingCharacter;
+          apiClient.patch(`/admin/characters/${char.id}/visibility`, { isPublic: true })
+            .then(() => { toast.success('Approved'); handleRefresh(); })
+            .catch(() => toast.error('Failed'));
+        } else if (activeTab === 'flagged' && items[focusedIdx]) {
+          const log = items[focusedIdx] as ModerationLog;
+          if (!log.action) {
+            apiClient.patch(`/admin/moderation/logs/${log.id}`, { action: 'allowed' })
+              .then(() => { toast.success('Allowed'); handleRefresh(); })
+              .catch(() => toast.error('Failed'));
+          }
+        }
+        break;
+      case 'r': // Reject/Block
+      case 'b':
+        e.preventDefault();
+        if (activeTab === 'flagged' && items[focusedIdx]) {
+          const log = items[focusedIdx] as ModerationLog;
+          if (!log.action) {
+            apiClient.patch(`/admin/moderation/logs/${log.id}`, { action: 'blocked' })
+              .then(() => { toast.success('Blocked'); handleRefresh(); })
+              .catch(() => toast.error('Failed'));
+          }
+        }
+        break;
+      case 's': // Skip (next without action)
+        e.preventDefault();
+        setFocusedIdx(prev => Math.min(prev + 1, maxIdx));
+        break;
+    }
+  }, [activeTab, pending.data, flagged.data, focusedIdx]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, [handleKeyboard]);
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['admin-pending-characters'] });
@@ -446,13 +507,17 @@ export default function ModerationPage() {
               ) : (
                 <div className="space-y-4">
                   {(pending.data?.data ?? []).map(
-                    (char: PendingCharacter) => (
-                      <PendingCard
+                    (char: PendingCharacter, idx: number) => (
+                      <div
                         key={char.id}
-                        character={char}
-                        onApprove={handleRefresh}
-                        onReject={handleRefresh}
-                      />
+                        className={`rounded-xl transition-shadow ${idx === focusedIdx ? 'ring-2 ring-indigo-500/50' : ''}`}
+                      >
+                        <PendingCard
+                          character={char}
+                          onApprove={handleRefresh}
+                          onReject={handleRefresh}
+                        />
+                      </div>
                     ),
                   )}
                 </div>
@@ -477,12 +542,16 @@ export default function ModerationPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {(flagged.data?.data ?? []).map((log: ModerationLog) => (
-                    <FlaggedCard
+                  {(flagged.data?.data ?? []).map((log: ModerationLog, idx: number) => (
+                    <div
                       key={log.id}
-                      log={log}
-                      onAction={handleRefresh}
-                    />
+                      className={`rounded-xl transition-shadow ${idx === focusedIdx ? 'ring-2 ring-indigo-500/50' : ''}`}
+                    >
+                      <FlaggedCard
+                        log={log}
+                        onAction={handleRefresh}
+                      />
+                    </div>
                   ))}
                 </div>
               )}
@@ -490,6 +559,14 @@ export default function ModerationPage() {
           )}
         </>
       )}
+
+      {/* Keyboard shortcuts hint bar */}
+      <div className="fixed bottom-0 left-[260px] right-0 h-10 bg-zinc-950/90 backdrop-blur-sm border-t border-zinc-800 flex items-center justify-center gap-6 text-[10px] text-zinc-500 z-20">
+        <span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 font-mono">J</kbd> / <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 font-mono">K</kbd> navigate</span>
+        <span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 font-mono">A</kbd> approve/allow</span>
+        <span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 font-mono">B</kbd> block</span>
+        <span><kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 font-mono">S</kbd> skip</span>
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
