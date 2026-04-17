@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   '/gallery',
   '/credits',
   '/profile',
+  '/settings',
 ];
 
 const isProtected = (pathname: string) =>
