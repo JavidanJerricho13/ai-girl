@@ -60,6 +60,12 @@ export class CharactersController {
     return this.charactersService.findMatches(dto.warmth, dto.playfulness);
   }
 
+  @Get('recommended')
+  @UseGuards(JwtAuthGuard)
+  async getRecommended(@Request() req: any) {
+    return this.charactersService.findRecommended(req.user.id);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.charactersService.findOne(id);

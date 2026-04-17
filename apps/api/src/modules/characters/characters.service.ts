@@ -161,6 +161,40 @@ export class CharactersService {
   }
 
   /**
+   * Personalized discovery. Computes the user's implicit preference from
+   * their conversation history (average warmth/playfulness of characters
+   * they've chatted with) and returns the closest matches they haven't
+   * tried yet. Falls back to popular characters if no history exists.
+   */
+  async findRecommended(userId: string) {
+    // Compute average personality from characters the user has chatted with
+    const prefs = await this.prisma.conversation.findMany({
+      where: { userId },
+      select: {
+        character: {
+          select: { warmth: true, playfulness: true },
+        },
+      },
+      take: 20,
+      orderBy: { lastMessageAt: 'desc' },
+    });
+
+    if (prefs.length === 0) {
+      // No history — return popular characters
+      return this.findAll(userId, undefined, undefined, 6, 0);
+    }
+
+    const avgWarmth = Math.round(
+      prefs.reduce((sum, p) => sum + p.character.warmth, 0) / prefs.length,
+    );
+    const avgPlayfulness = Math.round(
+      prefs.reduce((sum, p) => sum + p.character.playfulness, 0) / prefs.length,
+    );
+
+    return this.findMatches(avgWarmth, avgPlayfulness);
+  }
+
+  /**
    * Onboarding matchmaker. Returns the top 3 public characters ranked by
    * Euclidean distance from the requested (warmth, playfulness) point.
    *

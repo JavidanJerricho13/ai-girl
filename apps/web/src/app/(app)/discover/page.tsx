@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { Compass, Search, X, Loader2 } from 'lucide-react';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { Compass, Search, X, Loader2, Sparkles } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { CategoryChips, Category } from '@/components/character/CategoryChips';
 import { CharacterGrid } from '@/components/character/CharacterGrid';
 import { CharacterGridSkeleton } from '@/components/character/CharacterCardSkeleton';
-import { CharacterCardData } from '@/components/character/CharacterCard';
+import { CharacterCard, CharacterCardData } from '@/components/character/CharacterCard';
 
 const LIMIT = 20;
 const DEBOUNCE_MS = 300;
@@ -72,6 +72,15 @@ export default function DiscoverPage() {
     },
   });
 
+  const { data: recommended } = useQuery<Array<CharacterCardData & { matchScore?: number }>>({
+    queryKey: ['characters', 'recommended'],
+    queryFn: async () => {
+      const res = await apiClient.get('/characters/recommended');
+      return res.data?.data ?? res.data ?? [];
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+
   const characters = data?.pages.flat() ?? [];
 
   const handleClearSearch = () => {
@@ -120,6 +129,28 @@ export default function DiscoverPage() {
       <div className="mb-6">
         <CategoryChips selected={category} onChange={setCategory} />
       </div>
+
+      {/* For You — personality-matched recommendations */}
+      {recommended && recommended.length > 0 && !debouncedSearch && category === 'All' && (
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles size={18} className="text-lilac" />
+            <h3 className="font-display text-fluid-base text-white">For You</h3>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
+            {recommended.map((char) => (
+              <div key={char.id} className="snap-start shrink-0 w-[200px]">
+                <CharacterCard character={char} size="standard" />
+                {char.matchScore != null && (
+                  <p className="mt-1.5 text-center text-fluid-xs text-lilac/70">
+                    {char.matchScore}% match
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Content */}
       {isLoading ? (

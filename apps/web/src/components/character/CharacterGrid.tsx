@@ -1,5 +1,9 @@
+'use client';
+
+import { motion } from 'framer-motion';
 import { Compass, SearchX } from 'lucide-react';
 import { CharacterCard, CharacterCardData } from './CharacterCard';
+import { fadeUp } from '@/lib/motion';
 
 interface CharacterGridProps {
   characters: CharacterCardData[];
@@ -36,10 +40,26 @@ export function CharacterGrid({ characters, searchQuery }: CharacterGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {characters.map((character) => (
-        <CharacterCard key={character.id} character={character} />
-      ))}
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      {characters.map((character, i) => {
+        // Every 7th card (after the first) becomes a spotlight (spans 2 columns)
+        const isSpotlight = i > 0 && i % 7 === 0;
+
+        return (
+          <motion.div
+            key={character.id}
+            className={isSpotlight ? 'col-span-2' : ''}
+            initial={fadeUp.initial}
+            animate={fadeUp.animate}
+            transition={{ ...fadeUp.transition, delay: Math.min(i * 0.04, 0.3) }}
+          >
+            <CharacterCard
+              character={character}
+              size={isSpotlight ? 'spotlight' : 'standard'}
+            />
+          </motion.div>
+        );
+      })}
     </div>
   );
 }
