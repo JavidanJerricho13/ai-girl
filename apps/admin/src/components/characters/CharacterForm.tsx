@@ -18,7 +18,10 @@ interface CharacterFormData {
   name: string;
   displayName: string;
   description: string;
-  systemPrompt: string;
+  backstory: string;
+  speechQuirks: string[];
+  bannedPhrases: string[];
+  signaturePhrases: string[];
   warmth: number;
   playfulness: number;
   voiceId: string;
@@ -39,7 +42,10 @@ const EMPTY_FORM: CharacterFormData = {
   name: '',
   displayName: '',
   description: '',
-  systemPrompt: '',
+  backstory: '',
+  speechQuirks: [],
+  bannedPhrases: [],
+  signaturePhrases: [],
   warmth: 50,
   playfulness: 50,
   voiceId: '',
@@ -197,7 +203,10 @@ export function CharacterForm({
         name: initialData.name ?? '',
         displayName: initialData.displayName ?? '',
         description: initialData.description ?? '',
-        systemPrompt: initialData.systemPrompt ?? '',
+        backstory: initialData.backstory ?? '',
+        speechQuirks: initialData.speechQuirks ?? [],
+        bannedPhrases: initialData.bannedPhrases ?? [],
+        signaturePhrases: initialData.signaturePhrases ?? [],
         warmth: initialData.warmth ?? 50,
         playfulness: initialData.playfulness ?? 50,
         voiceId: initialData.voiceId ?? '',
@@ -229,8 +238,8 @@ export function CharacterForm({
     if (!form.displayName.trim()) errs.displayName = 'Display name is required';
     if (!form.description.trim()) errs.description = 'Description is required';
     if (form.description.length < 10) errs.description = 'At least 10 characters';
-    if (!form.systemPrompt.trim()) errs.systemPrompt = 'System prompt is required';
-    if (form.systemPrompt.length < 50) errs.systemPrompt = 'At least 50 characters';
+    if (!form.backstory.trim()) errs.backstory = 'Backstory is required';
+    if (form.backstory.length < 50) errs.backstory = 'At least 50 characters';
     if (form.category.length === 0) errs.category = 'Select at least one category';
 
     setErrors(errs);
@@ -385,36 +394,80 @@ export function CharacterForm({
           </div>
         </section>
 
-        {/* Intelligence */}
+        {/* Intelligence — structured persona template */}
         <section
           id="intelligence"
           className="bg-zinc-900/50 backdrop-blur-md border border-zinc-800 rounded-xl p-6"
         >
           <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-5">
-            Core Intelligence
+            Persona Template
           </h3>
-          <div>
+
+          {/* Backstory */}
+          <div className="mb-5">
             <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-              System Prompt *
+              Backstory *
             </label>
             <textarea
-              value={form.systemPrompt}
-              onChange={(e) => updateField('systemPrompt', e.target.value)}
-              placeholder="Define the character's personality, behavior, and knowledge..."
-              rows={10}
-              className={`w-full px-3 py-2.5 bg-zinc-900 border rounded-xl text-sm text-zinc-200 placeholder-zinc-600 resize-y font-mono focus:outline-none focus:ring-1 transition-colors ${
-                errors.systemPrompt
+              value={form.backstory}
+              onChange={(e) => updateField('backstory', e.target.value)}
+              placeholder="Who she is — situation, voice, backstory. 2-4 paragraphs, written in second person ('You are...')."
+              rows={8}
+              className={`w-full px-3 py-2.5 bg-zinc-900 border rounded-xl text-sm text-zinc-200 placeholder-zinc-600 resize-y focus:outline-none focus:ring-1 transition-colors ${
+                errors.backstory
                   ? 'border-red-600 focus:border-red-600 focus:ring-red-600/30'
                   : 'border-zinc-800 focus:border-indigo-600 focus:ring-indigo-600/30'
               }`}
             />
-            {errors.systemPrompt && (
+            {errors.backstory && (
               <p className="text-[11px] text-red-400 mt-1">
-                {errors.systemPrompt}
+                {errors.backstory}
               </p>
             )}
             <p className="text-[10px] text-zinc-600 mt-1 text-right">
-              {form.systemPrompt.length} / 10,000
+              {form.backstory.length} / 5,000
+            </p>
+          </div>
+
+          {/* Speech Quirks */}
+          <div className="mb-5">
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+              Speech Quirks
+            </label>
+            <TagInput
+              tags={form.speechQuirks}
+              onChange={(v) => updateField('speechQuirks', v)}
+            />
+            <p className="text-[10px] text-zinc-600 mt-1">
+              e.g. "lowercase only", "short sentences", "frequent emojis"
+            </p>
+          </div>
+
+          {/* Signature Phrases */}
+          <div className="mb-5">
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+              Signature Phrases
+            </label>
+            <TagInput
+              tags={form.signaturePhrases}
+              onChange={(v) => updateField('signaturePhrases', v)}
+            />
+            <p className="text-[10px] text-zinc-600 mt-1">
+              Phrases she uses recurringly. PromptBuilder sprinkles them in.
+            </p>
+          </div>
+
+          {/* Banned Phrases */}
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+              Banned Phrases
+            </label>
+            <TagInput
+              tags={form.bannedPhrases}
+              onChange={(v) => updateField('bannedPhrases', v)}
+            />
+            <p className="text-[10px] text-zinc-600 mt-1">
+              Phrases she'd never say. "As an AI" is always banned globally.
             </p>
           </div>
         </section>

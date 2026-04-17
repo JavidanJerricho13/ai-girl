@@ -4,6 +4,7 @@ import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { ModelRouterService } from './services/model-router.service';
 import { ChatMediaService } from './services/chat-media.service';
+import { PromptBuilderService } from '../characters/services/prompt-builder.service';
 import { GroqService } from '../../integrations/groq/groq.service';
 import { OpenAIService } from '../../integrations/openai/openai.service';
 import { FalService } from '../../integrations/fal/fal.service';
@@ -29,6 +30,7 @@ import { CreditsModule } from '../credits/credits.module';
     ChatService,
     ModelRouterService,
     ChatMediaService,
+    PromptBuilderService,
     GroqService,
     OpenAIService,
     FalService,

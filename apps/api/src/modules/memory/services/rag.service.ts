@@ -202,6 +202,21 @@ export class RAGService {
   }
 
   /**
+   * Pick one random MemorySummary for a conversation. Used for "memory
+   * receipts" — the character referencing a specific past detail every
+   * ~20 messages to build intimacy.
+   */
+  async getRandomMemorySummary(conversationId: string): Promise<string | null> {
+    const all = await this.prisma.memorySummary.findMany({
+      where: { conversationId },
+      select: { summary: true },
+    });
+    if (!all.length) return null;
+    const pick = all[Math.floor(Math.random() * all.length)];
+    return pick.summary;
+  }
+
+  /**
    * Delete all memories for a conversation
    */
   async deleteMemories(conversationId: string): Promise<void> {

@@ -25,7 +25,7 @@ interface PendingCharacter {
   name: string;
   displayName: string;
   description: string;
-  systemPrompt: string;
+  backstory: string;
   isPublic: boolean;
   category: string[];
   createdAt: string;
@@ -187,11 +187,11 @@ function PendingCard({
         className="flex items-center gap-1 mt-3 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
       >
         {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-        {expanded ? 'Hide' : 'View'} System Prompt
+        {expanded ? 'Hide' : 'View'} Backstory
       </button>
       {expanded && (
         <pre className="mt-2 p-3 bg-zinc-950/50 border border-zinc-800 rounded-lg text-[11px] text-zinc-400 max-h-40 overflow-y-auto whitespace-pre-wrap font-mono">
-          {character.systemPrompt}
+          {character.backstory || '—'}
         </pre>
       )}
     </div>

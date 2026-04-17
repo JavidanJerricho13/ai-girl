@@ -14,8 +14,23 @@ export class CreateCharacterDto {
   description: string;
 
   @IsString()
-  @IsNotEmpty()
-  systemPrompt: string;
+  @IsOptional()
+  backstory?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  speechQuirks?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  bannedPhrases?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  signaturePhrases?: string[];
 
   @IsNumber()
   @Min(0)

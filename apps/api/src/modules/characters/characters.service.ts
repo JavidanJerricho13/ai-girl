@@ -9,10 +9,11 @@ export class CharactersService {
 
   async create(userId: string, dto: CreateCharacterDto) {
     return this.prisma.character.create({
+      // `as any` until prisma generate picks up the new persona fields.
       data: {
         ...dto,
         createdBy: userId,
-      },
+      } as any,
       include: {
         media: {
           where: { type: 'profile' },

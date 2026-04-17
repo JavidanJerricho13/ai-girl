@@ -3,9 +3,9 @@ import { PrismaService } from '../../common/services/prisma.service';
 import { RAGService } from '../memory/services/rag.service';
 import { ConversationsService } from '../conversations/conversations.service';
 import { CharactersService } from '../characters/characters.service';
+import { PromptBuilderService } from '../characters/services/prompt-builder.service';
 import {
   ModelRouterService,
-  buildPersonalityBlock,
   computeChunkDelayMs,
   computeThinkingDelayMs,
 } from './services/model-router.service';
@@ -105,6 +105,7 @@ export class ChatService {
     private ragService: RAGService,
     private conversationsService: ConversationsService,
     private charactersService: CharactersService,
+    private promptBuilder: PromptBuilderService,
     private creditsService: CreditsService,
     private chatMediaService: ChatMediaService,
   ) {}
@@ -158,14 +159,42 @@ export class ChatService {
       },
     });
 
-    // 4. Build system prompt with character systemPrompt + personality + RAG context.
+    // 4. Build system prompt via PromptBuilder (structured persona template).
     let context = '';
     try {
       context = await this.ragService.getContext(conversationId, content);
     } catch (err) {
       this.logger.warn(`RAG context failed, continuing without: ${(err as Error).message}`);
     }
-    const systemPrompt = this.buildSystemPrompt(character, context);
+
+    // Memory receipt: every ~20 assistant messages, surface a specific
+    // memory so the character feels like she's been thinking about the user.
+    let memorySurfacing: string | null = null;
+    const msgCount = (conversation as any).messageCount ?? 0;
+    if (msgCount > 0 && msgCount % 20 === 19) {
+      try {
+        memorySurfacing = await this.ragService.getRandomMemorySummary(conversationId);
+      } catch {
+        // Non-critical — skip silently.
+      }
+    }
+
+    const systemPrompt = this.promptBuilder.build(
+      {
+        displayName: character.displayName,
+        backstory: (character as any).backstory,
+        speechQuirks: (character as any).speechQuirks,
+        bannedPhrases: (character as any).bannedPhrases,
+        signaturePhrases: (character as any).signaturePhrases,
+        warmth: character.warmth,
+        playfulness: character.playfulness,
+      },
+      {
+        ragContext: context,
+        userTimezone: (conversation as any).user?.timezone ?? 'Asia/Baku',
+        memorySurfacingHint: memorySurfacing,
+      },
+    );
 
     // 5. Typing jitter — delay before the first token lands so the response
     //    feels written, not flashed. Also surfaces a 'typing' event so the
@@ -267,32 +296,7 @@ export class ChatService {
     yield { kind: 'complete' };
   }
 
-  private buildSystemPrompt(character: any, context: string): string {
-    const parts: string[] = [];
-    parts.push(character.systemPrompt || 'You are a friendly and helpful AI companion.');
-
-    const personality = buildPersonalityBlock({
-      warmth: character.warmth,
-      playfulness: character.playfulness,
-    });
-    if (personality) parts.push(personality);
-
-    if (context) {
-      parts.push(`Things you remember about this person:\n${context}`);
-    }
-
-    // A lightweight behavioural guardrail — keeps short, conversational tone
-    // (this is an emotional companion, not a knowledge assistant) and nudges
-    // the model to use request_media sparingly rather than every turn.
-    parts.push(
-      [
-        'Write like a text conversation: short, warm, natural. No bulleted lists, no headings.',
-        'You have a tool called request_media. Call it only when the user asks to see or hear you, or when a visual/voice clearly belongs in the moment. Most replies should be text only.',
-      ].join(' '),
-    );
-
-    return parts.join('\n\n');
-  }
+  // buildSystemPrompt removed — see PromptBuilderService.
 
   private async isUserPremium(userId: string): Promise<boolean> {
     const user = await this.prisma.user.findUnique({

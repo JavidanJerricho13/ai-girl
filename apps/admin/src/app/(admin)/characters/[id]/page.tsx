@@ -35,7 +35,10 @@ interface Character {
   name: string;
   displayName: string;
   description: string;
-  systemPrompt: string;
+  backstory: string;
+  speechQuirks: string[];
+  bannedPhrases: string[];
+  signaturePhrases: string[];
   isPublic: boolean;
   isPremium: boolean;
   isOfficial: boolean;
@@ -404,16 +407,55 @@ export default function CharacterDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* System prompt + Moderation */}
+      {/* Persona + Moderation */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* System prompt */}
-        <div className="lg:col-span-2 bg-zinc-900/50 backdrop-blur-md border border-zinc-800 rounded-xl p-5">
+        {/* Persona template */}
+        <div className="lg:col-span-2 bg-zinc-900/50 backdrop-blur-md border border-zinc-800 rounded-xl p-5 space-y-4">
           <h3 className="text-sm font-semibold text-zinc-300 mb-3">
-            System Prompt
+            Persona Template
           </h3>
-          <pre className="text-xs text-zinc-400 leading-relaxed bg-zinc-950/50 rounded-lg p-4 border border-zinc-800 max-h-64 overflow-y-auto whitespace-pre-wrap font-mono">
-            {character.systemPrompt}
-          </pre>
+          <div>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Backstory</p>
+            <pre className="text-xs text-zinc-400 leading-relaxed bg-zinc-950/50 rounded-lg p-4 border border-zinc-800 max-h-48 overflow-y-auto whitespace-pre-wrap">
+              {character.backstory || '—'}
+            </pre>
+          </div>
+          {character.speechQuirks?.length > 0 && (
+            <div>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Speech Quirks</p>
+              <div className="flex flex-wrap gap-1.5">
+                {character.speechQuirks.map((q: string) => (
+                  <span key={q} className="px-2 py-0.5 bg-zinc-800 text-zinc-300 text-xs rounded-md">
+                    {q}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {character.signaturePhrases?.length > 0 && (
+            <div>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Signature Phrases</p>
+              <div className="flex flex-wrap gap-1.5">
+                {character.signaturePhrases.map((p: string) => (
+                  <span key={p} className="px-2 py-0.5 bg-zinc-800 text-zinc-300 text-xs rounded-md">
+                    "{p}"
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {character.bannedPhrases?.length > 0 && (
+            <div>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Banned Phrases</p>
+              <div className="flex flex-wrap gap-1.5">
+                {character.bannedPhrases.map((b: string) => (
+                  <span key={b} className="px-2 py-0.5 bg-red-900/40 text-red-300 text-xs rounded-md">
+                    {b}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Moderation actions */}

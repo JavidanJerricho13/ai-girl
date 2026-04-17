@@ -206,7 +206,7 @@ export class EngagementService {
     // line, no questions stacked on questions, no explicit "I miss you"
     // (it reads as needy when the message arrives out of the blue).
     return [
-      character.systemPrompt || 'You are a warm AI companion.',
+      (character as any).backstory || 'You are a warm AI companion.',
       personality,
       memory
         ? `Most recent thing you remember about this person:\n${memory}`
