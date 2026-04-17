@@ -38,6 +38,14 @@ export class UsersController {
     return this.usersService.update(req.user.id, data);
   }
 
+  @Patch('push-token')
+  async updatePushToken(
+    @Request() req,
+    @Body('pushToken') pushToken: string,
+  ) {
+    return this.usersService.update(req.user.id, { pushToken } as any);
+  }
+
   @Get('stats')
   async getStats(@Request() req) {
     return this.usersService.getUserStats(req.user.id);

@@ -17,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiService } from '../../services/api.service';
 import { ImageViewer, ImageViewerData } from '../../components/media/ImageViewer';
+import { GalleryCard as GalleryCardComponent } from '../../components/media/GalleryCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_SIZE = (SCREEN_WIDTH - 48) / 2;
@@ -412,7 +413,16 @@ export default function GalleryScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: GalleryItem }) => (
-      <GalleryCard item={item} onPress={handleItemPress} />
+      <GalleryCardComponent
+        item={{
+          id: item.id,
+          type: item.type,
+          resultUrl: item.resultUrl,
+          prompt: item.prompt,
+          createdAt: item.createdAt,
+        }}
+        onPress={() => handleItemPress(item)}
+      />
     ),
     [handleItemPress],
   );

@@ -19,6 +19,7 @@ import Animated, {
 import { useAuthStore } from '../../store/auth.store';
 import { apiService } from '../../services/api.service';
 import { AnimatedCreditBadge } from '../../components/AnimatedCreditBadge';
+import { StreakWidget } from '../../components/profile/StreakWidget';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -120,6 +121,10 @@ export default function ProfileScreen() {
           <Text style={styles.buyCreditsIcon}>💎</Text>
           <Text style={styles.buyCreditsText}>Get More Credits</Text>
         </TouchableOpacity>
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(250)}>
+        <StreakWidget currentStreak={user?.loginStreak || 0} />
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>

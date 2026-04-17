@@ -58,6 +58,10 @@ model User {
   dob         DateTime? // Date of birth for age gate
   ageVerified Boolean   @default(false) // true after DOB + checkbox confirmation
 
+  // Push notifications
+  pushToken      String?
+  pushEnabled    Boolean   @default(true)
+
   // Moderation
   isActive       Boolean   @default(true)
   isShadowBanned Boolean   @default(false)

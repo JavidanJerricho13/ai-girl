@@ -10,6 +10,7 @@ import { useAuthStore } from '../store/auth.store';
 import { notificationService } from '../services/notifications.service';
 import { apiService } from '../services/api.service';
 import { ActivityIndicator, View } from 'react-native';
+import { StatusBarConfig } from '../components/StatusBarConfig';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -73,6 +74,8 @@ export function RootNavigator() {
   }
 
   return (
+    <>
+    <StatusBarConfig />
     <NavigationContainer linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
@@ -84,5 +87,6 @@ export function RootNavigator() {
         )}
       </Stack.Navigator>
     </NavigationContainer>
+    </>
   );
 }

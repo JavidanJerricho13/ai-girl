@@ -21,6 +21,10 @@ import { apiService } from '../../services/api.service';
 import { MessageSkeleton } from '../../components/LoadingSkeleton';
 import { AnimatedCreditBadge } from '../../components/AnimatedCreditBadge';
 import { ImageViewer, ImageViewerData } from '../../components/media/ImageViewer';
+import { ChatStarters } from '../../components/chat/ChatStarters';
+import { CreditWarning } from '../../components/chat/CreditWarning';
+import { RelationshipBar } from '../../components/chat/RelationshipBar';
+import { haptic } from '../../utils/haptics';
 
 interface RouteParams {
   conversationId: string;
@@ -35,7 +39,8 @@ export default function ChatScreen() {
   const { conversationId, characterName, characterAvatar } = params;
 
   const { messages, currentStreamingMessage, isTyping, addMessage, setMessages, appendStreamChunk, finishStream, setTyping } = useChatStore();
-  const { updateCredits } = useAuthStore();
+  const { updateCredits, user } = useAuthStore();
+  const userCredits = user?.credits ?? 0;
   
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -70,11 +75,36 @@ export default function ChatScreen() {
       setTyping(typing);
     });
 
+    const unsubscribeCredits = websocketService.onCreditsUpdated((data) => {
+      updateCredits(data.balance);
+    });
+
+    const unsubscribeMedia = websocketService.onMedia((data) => {
+      const mediaMessage: Message = {
+        id: data.messageId,
+        conversationId,
+        role: 'assistant',
+        content: data.caption || '',
+        imageUrl: data.mediaType === 'image' ? data.url : undefined,
+        audioUrl: data.mediaType === 'voice' ? data.url : undefined,
+        createdAt: new Date().toISOString(),
+      };
+      addMessage(conversationId, mediaMessage);
+      scrollToBottom();
+    });
+
+    const unsubscribeComplete = websocketService.onPartComplete(() => {
+      haptic.success();
+    });
+
     return () => {
       websocketService.leaveConversation(conversationId);
       unsubscribeMessage();
       unsubscribeChunk();
       unsubscribeTyping();
+      unsubscribeCredits();
+      unsubscribeMedia();
+      unsubscribeComplete();
       if (sound) {
         sound.remove();
       }
@@ -102,10 +132,12 @@ export default function ChatScreen() {
     }, 100);
   }, []);
 
-  const handleSend = async () => {
-    if (!inputText.trim() || isSending) return;
+  const handleSend = async (text?: string) => {
+    const content = text || inputText.trim();
+    if (!content || isSending) return;
 
-    const messageContent = inputText.trim();
+    haptic.light();
+    const messageContent = content;
     setInputText('');
     setIsSending(true);
 
@@ -341,6 +373,13 @@ export default function ChatScreen() {
         </View>
         <AnimatedCreditBadge onPress={() => (navigation as any).navigate('Subscription')} />
       </View>
+
+      <RelationshipBar messageCount={conversationMessages.length} />
+      <CreditWarning credits={userCredits} />
+
+      {conversationMessages.length === 0 && (
+        <ChatStarters characterName={characterName} onSelect={handleSend} />
+      )}
 
       <FlatList
         ref={flatListRef}

@@ -15,6 +15,8 @@ import { useNavigation } from '@react-navigation/native';
 import { apiService } from '../../services/api.service';
 import { CharacterCardSkeleton } from '../../components/LoadingSkeleton';
 import { AnimatedCreditBadge } from '../../components/AnimatedCreditBadge';
+import { HeroCard } from '../../components/discover/HeroCard';
+import { BentoCard } from '../../components/discover/BentoCard';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -158,35 +160,35 @@ export default function DiscoverScreen() {
   };
 
   const renderCharacterCard = ({ item }: { item: Character }) => (
-    <TouchableOpacity
-      style={styles.card}
+    <BentoCard
+      character={{
+        id: item.id,
+        displayName: item.name,
+        description: item.tagline || '',
+        conversationCount: item.messageCount,
+        media: item.avatar ? [{ url: item.avatar, type: 'profile' }] : [],
+      }}
+      size="small"
       onPress={() => handleCharacterPress(item)}
-      activeOpacity={0.9}
-    >
-      <Image
-        source={{ uri: item.avatar || 'https://via.placeholder.com/200' }}
-        style={styles.cardImage}
-        resizeMode="cover"
-      />
-      <View style={styles.cardOverlay}>
-        <View style={styles.cardContent}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text style={styles.cardSubtitle} numberOfLines={2}>
-            {item.tagline}
-          </Text>
-          {item.messageCount !== undefined && item.messageCount > 0 && (
-            <View style={styles.messagesBadge}>
-              <Text style={styles.messagesBadgeText}>
-                {item.messageCount}+ chats
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
+    />
   );
+
+  const renderHeroHeader = () => {
+    if (characters.length === 0) return null;
+    const hero = characters[0];
+    return (
+      <HeroCard
+        character={{
+          id: hero.id,
+          displayName: hero.name,
+          description: hero.tagline || '',
+          conversationCount: hero.messageCount,
+          media: hero.avatar ? [{ url: hero.avatar, type: 'profile' }] : [],
+        }}
+        onPress={() => handleCharacterPress(hero)}
+      />
+    );
+  };
 
   const renderFooter = () => {
     if (!isLoadingMore) return null;
@@ -290,6 +292,7 @@ export default function DiscoverScreen() {
           showsVerticalScrollIndicator={false}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
+          ListHeaderComponent={renderHeroHeader}
           ListFooterComponent={renderFooter}
           ListEmptyComponent={renderEmpty}
           refreshControl={
