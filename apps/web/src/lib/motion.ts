@@ -33,3 +33,16 @@ export const scaleIn = {
 export const stagger = (delay = 0.05) => ({
   animate: { transition: { staggerChildren: delay } },
 });
+
+/**
+ * Returns empty variants when the user prefers reduced motion.
+ * Use: `<motion.div {...useMotionSafe(fadeUp)}>`
+ */
+export function useMotionSafe<T extends Record<string, unknown>>(variants: T): T | Record<string, never> {
+  // Check at module level — the CSS media query already handles runtime,
+  // this just prevents JS-driven animations from firing.
+  if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return {} as Record<string, never>;
+  }
+  return variants;
+}

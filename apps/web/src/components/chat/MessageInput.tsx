@@ -61,6 +61,7 @@ export function MessageInput({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a message..."
+          aria-label="Message input"
           disabled={disabled}
           rows={1}
           className="flex-1 resize-none bg-gray-800 text-gray-200 placeholder-gray-500 border border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/30 disabled:opacity-50 transition-colors"
@@ -68,6 +69,7 @@ export function MessageInput({
         <button
           type="submit"
           disabled={!input.trim() || disabled}
+          aria-label="Send message"
           className="p-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shrink-0"
         >
           <Send size={18} />

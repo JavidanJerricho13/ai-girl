@@ -71,7 +71,7 @@ export function ImageLightbox({ item, image, onClose }: ImageLightboxProps) {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex">
+      <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label="Image preview">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}

@@ -38,6 +38,7 @@ export function AttachmentMenu({
             : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
         }`}
         aria-label="Attachments"
+        aria-expanded={open}
       >
         {open ? <X size={18} /> : <Plus size={18} />}
       </button>
