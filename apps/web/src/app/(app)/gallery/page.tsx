@@ -5,6 +5,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { ImageIcon, Loader2 } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { GalleryGrid } from '@/components/media/GalleryGrid';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { ImageLightbox } from '@/components/media/ImageLightbox';
 import { GalleryItemData } from '@/components/media/GalleryItem';
 
@@ -112,7 +113,9 @@ export default function GalleryPage() {
         </div>
       ) : (
         <>
-          <GalleryGrid items={items} onItemClick={setLightboxItem} />
+          <ErrorBoundary>
+            <GalleryGrid items={items} onItemClick={setLightboxItem} />
+          </ErrorBoundary>
 
           {hasNextPage && (
             <div className="flex justify-center mt-8">

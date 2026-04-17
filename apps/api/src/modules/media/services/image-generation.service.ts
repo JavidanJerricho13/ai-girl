@@ -94,11 +94,10 @@ export class ImageGenerationService {
       this.logger.log(`Downloading image from fal.ai`);
       const imageBuffer = await this.falService.downloadImage(falResult.url);
 
-      this.logger.log(`Uploading image to R2 storage`);
-      const uploadResult = await this.storageService.uploadImage(
+      this.logger.log(`Uploading optimized image to R2 storage`);
+      const optimized = await this.storageService.uploadOptimizedImage(
         imageBuffer,
         params.characterId,
-        `${Date.now()}.png`,
       );
 
       // 7. Create CharacterMedia record
@@ -106,7 +105,8 @@ export class ImageGenerationService {
         data: {
           characterId: params.characterId,
           type: 'gallery',
-          url: uploadResult.url,
+          url: optimized.fullUrl,
+          thumbnailUrl: optimized.thumbUrl,
           metadata: {
             width: falResult.width,
             height: falResult.height,
@@ -115,6 +115,7 @@ export class ImageGenerationService {
             imageSize: params.imageSize,
             provider: 'fal',
             model: params.usePro ? 'flux-pro' : 'flux-dev',
+            blurDataUrl: optimized.blurDataUrl,
           },
         },
       });
@@ -146,7 +147,7 @@ export class ImageGenerationService {
           where: { id: job.id },
           data: {
             status: 'COMPLETED',
-            resultUrl: uploadResult.url,
+            resultUrl: optimized.fullUrl,
             completedAt: new Date(),
           },
         });
@@ -172,7 +173,7 @@ export class ImageGenerationService {
       this.logger.log(`Image generation completed successfully for job ${job.id}`);
 
       return {
-        imageUrl: uploadResult.url,
+        imageUrl: optimized.fullUrl,
         characterMediaId: characterMedia.id,
         creditsUsed: costCredits,
       };

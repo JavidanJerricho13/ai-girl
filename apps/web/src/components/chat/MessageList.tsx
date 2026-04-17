@@ -2,6 +2,7 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronDown, Zap } from 'lucide-react';
 import { TypingIndicator } from './TypingIndicator';
 import { InlineImage } from './InlineImage';
@@ -148,10 +149,18 @@ const MessageBubble = memo(function MessageBubble({
 
 export function MessageList({ messages, isTyping, onMediaUnlocked }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const endRef = useRef<HTMLDivElement>(null);
   const [lightboxImage, setLightboxImage] =
     useState<LightboxImageData | null>(null);
   const [userScrolledUp, setUserScrolledUp] = useState(false);
+
+  const itemCount = messages.length + (isTyping ? 1 : 0);
+
+  const virtualizer = useVirtualizer({
+    count: itemCount,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 72,
+    overscan: 8,
+  });
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -162,15 +171,15 @@ export function MessageList({ messages, isTyping, onMediaUnlocked }: MessageList
 
   // Auto-scroll only if user is at the bottom
   useEffect(() => {
-    if (!userScrolledUp) {
-      endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!userScrolledUp && itemCount > 0) {
+      virtualizer.scrollToIndex(itemCount - 1, { align: 'end', behavior: 'smooth' });
     }
-  }, [messages, isTyping, userScrolledUp]);
+  }, [itemCount, userScrolledUp]);
 
   const scrollToBottom = useCallback(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    virtualizer.scrollToIndex(itemCount - 1, { align: 'end', behavior: 'smooth' });
     setUserScrolledUp(false);
-  }, []);
+  }, [virtualizer, itemCount]);
 
   const lastUserId = [...messages].reverse().find((m) => m.role === 'user')?.id;
 
@@ -179,29 +188,52 @@ export function MessageList({ messages, isTyping, onMediaUnlocked }: MessageList
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-6 space-y-3 relative"
+        className="flex-1 overflow-y-auto relative"
       >
-        {messages.map((message) => (
-          <MessageBubble
-            key={message.id}
-            message={message}
-            onImageClick={setLightboxImage}
-            showCost={message.role === 'user' && message.id === lastUserId}
-            onMediaUnlocked={onMediaUnlocked}
-          />
-        ))}
+        <div
+          style={{
+            height: virtualizer.getTotalSize(),
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {virtualizer.getVirtualItems().map((vItem) => {
+            const isMessage = vItem.index < messages.length;
 
-        {isTyping && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-start"
-          >
-            <TypingIndicator />
-          </motion.div>
-        )}
-
-        <div ref={endRef} />
+            return (
+              <div
+                key={vItem.key}
+                data-index={vItem.index}
+                ref={virtualizer.measureElement}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${vItem.start}px)`,
+                }}
+                className="px-4 py-1.5"
+              >
+                {isMessage ? (
+                  <MessageBubble
+                    message={messages[vItem.index]}
+                    onImageClick={setLightboxImage}
+                    showCost={messages[vItem.index].role === 'user' && messages[vItem.index].id === lastUserId}
+                    onMediaUnlocked={onMediaUnlocked}
+                  />
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex justify-start"
+                  >
+                    <TypingIndicator />
+                  </motion.div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* "New messages" jump-to-bottom button */}

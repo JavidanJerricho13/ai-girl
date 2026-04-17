@@ -6,6 +6,7 @@ import { Compass, Search, X, Loader2, Sparkles } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { CategoryChips, Category } from '@/components/character/CategoryChips';
 import { CharacterGrid } from '@/components/character/CharacterGrid';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { CharacterGridSkeleton } from '@/components/character/CharacterCardSkeleton';
 import { CharacterCard, CharacterCardData } from '@/components/character/CharacterCard';
 
@@ -166,10 +167,12 @@ export default function DiscoverPage() {
         </div>
       ) : (
         <>
-          <CharacterGrid
-            characters={characters}
-            searchQuery={debouncedSearch}
-          />
+          <ErrorBoundary>
+            <CharacterGrid
+              characters={characters}
+              searchQuery={debouncedSearch}
+            />
+          </ErrorBoundary>
 
           {/* Load More */}
           {hasNextPage && (

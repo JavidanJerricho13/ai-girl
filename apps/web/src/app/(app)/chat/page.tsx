@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { ChatWindow, type ConnectionState } from '@/components/chat/ChatWindow';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { ConversationList } from '@/components/chat/ConversationList';
 import { CharacterPickerModal } from '@/components/chat/CharacterPickerModal';
 import { useAuthStore } from '@/store/auth.store';
@@ -319,16 +320,18 @@ export default function ChatPage() {
       {/* Chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         {selectedConversationId ? (
-          <ChatWindow
-            messages={messages}
-            isTyping={isTyping}
-            onSendMessage={handleSendMessage}
-            onMediaGenerated={handleMediaGenerated}
-            onMediaUnlocked={handleMediaUnlocked}
-            disabled={connectionState !== 'connected' || isTyping}
-            character={activeCharacter}
-            connectionState={connectionState}
-          />
+          <ErrorBoundary>
+            <ChatWindow
+              messages={messages}
+              isTyping={isTyping}
+              onSendMessage={handleSendMessage}
+              onMediaGenerated={handleMediaGenerated}
+              onMediaUnlocked={handleMediaUnlocked}
+              disabled={connectionState !== 'connected' || isTyping}
+              character={activeCharacter}
+              connectionState={connectionState}
+            />
+          </ErrorBoundary>
         ) : (
           <div className="h-full flex items-center justify-center bg-gray-900">
             <div className="text-center">
