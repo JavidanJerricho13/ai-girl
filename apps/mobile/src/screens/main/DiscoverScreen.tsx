@@ -25,11 +25,16 @@ const CARD_WIDTH = (width - 48) / 2;
 interface Character {
   id: string;
   name: string;
-  tagline: string;
-  avatar: string;
-  category: string;
+  displayName?: string;
+  description?: string;
+  tagline?: string;
+  avatar?: string;
+  category: string | string[];
   isPublic: boolean;
+  isPremium?: boolean;
   messageCount?: number;
+  conversationCount?: number;
+  media?: Array<{ url: string; type: string }>;
 }
 
 const DEBOUNCE_MS = 300;
@@ -160,15 +165,22 @@ export default function DiscoverScreen() {
     );
   };
 
+  const mapCharacter = (item: Character) => ({
+    id: item.id,
+    displayName: item.displayName || item.name,
+    description: item.description || item.tagline || '',
+    conversationCount: item.conversationCount || item.messageCount || 0,
+    isPremium: item.isPremium,
+    media: item.media?.length
+      ? item.media
+      : item.avatar
+        ? [{ url: item.avatar, type: 'profile' }]
+        : [],
+  });
+
   const renderCharacterCard = ({ item }: { item: Character }) => (
     <BentoCard
-      character={{
-        id: item.id,
-        displayName: item.name,
-        description: item.tagline || '',
-        conversationCount: item.messageCount,
-        media: item.avatar ? [{ url: item.avatar, type: 'profile' }] : [],
-      }}
+      character={mapCharacter(item)}
       size="small"
       onPress={() => handleCharacterPress(item)}
     />
@@ -179,13 +191,7 @@ export default function DiscoverScreen() {
     const hero = characters[0];
     return (
       <HeroCard
-        character={{
-          id: hero.id,
-          displayName: hero.name,
-          description: hero.tagline || '',
-          conversationCount: hero.messageCount,
-          media: hero.avatar ? [{ url: hero.avatar, type: 'profile' }] : [],
-        }}
+        character={mapCharacter(hero)}
         onPress={() => handleCharacterPress(hero)}
       />
     );
@@ -291,6 +297,7 @@ export default function DiscoverScreen() {
           keyExtractor={(item) => item.id}
           numColumns={2}
           contentContainerStyle={styles.gridContainer}
+          columnWrapperStyle={styles.gridRow}
           showsVerticalScrollIndicator={false}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
@@ -414,7 +421,12 @@ const styles = StyleSheet.create({
 
   // Grid
   gridContainer: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+  },
+  gridRow: {
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   card: {
     width: CARD_WIDTH,
