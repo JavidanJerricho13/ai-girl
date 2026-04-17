@@ -8,6 +8,7 @@ import {
   ModelRouterService,
   computeChunkDelayMs,
   computeThinkingDelayMs,
+  computeTypingDelayMs,
 } from './services/model-router.service';
 import { CreditsService } from '../credits/credits.service';
 import { ChatMediaService } from './services/chat-media.service';
@@ -36,6 +37,7 @@ export type ChatEvent =
       isLocked: boolean;
     }
   | { kind: 'credits'; balance: number; delta: number }
+  | { kind: 'part-complete'; messageId: string }
   | { kind: 'complete' };
 
 // LLM tool schema. Unified photo/voice interface — the model picks the
@@ -71,12 +73,16 @@ const REQUEST_MEDIA_TOOL: ToolDefinition = {
   },
 };
 
+// 10% chance to split a response into two "texts" with a 2s gap between
+// them. Only fires when the response is long enough and has a clean split
+// point (sentence end in the first 30%).
+const DOUBLE_TEXT_CHANCE = 0.10;
+const DOUBLE_TEXT_GAP_MS = 2000;
+
 function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, Math.max(0, ms)));
 }
 
-// Break a string into human-paced chunks so the client's streaming UI looks
-// like real typing. We split on spaces so we don't bisect words mid-character.
 function chunkForTyping(text: string): string[] {
   if (!text) return [];
   const parts: string[] = [];
@@ -84,8 +90,6 @@ function chunkForTyping(text: string): string[] {
   let buf = '';
   for (const token of tokens) {
     buf += token;
-    // Flush on word boundaries, roughly every 1–2 words, with an occasional
-    // multi-word clump so the rhythm isn't perfectly metronomic.
     if (buf.length >= 6 || /[.?!…,]$/.test(token)) {
       parts.push(buf);
       buf = '';
@@ -93,6 +97,27 @@ function chunkForTyping(text: string): string[] {
   }
   if (buf) parts.push(buf);
   return parts;
+}
+
+/**
+ * Maybe split a response into two parts for the "double-text" effect.
+ * Returns [fullText] if no split, or [part1, part2] if split.
+ */
+function maybeSplitForDoubleText(text: string): string[] {
+  if (!text || text.length < 100) return [text];
+  if (Math.random() >= DOUBLE_TEXT_CHANCE) return [text];
+
+  // Find first sentence-end (. ? ! …) in the first 30% of the response,
+  // but no earlier than index 20 so part1 isn't trivially short.
+  const cutoff = Math.floor(text.length * 0.3);
+  for (let i = 20; i < cutoff; i++) {
+    if ('.?!…'.includes(text[i]) && text[i + 1] === ' ') {
+      const part1 = text.slice(0, i + 1).trim();
+      const part2 = text.slice(i + 1).trim();
+      if (part1 && part2) return [part1, part2];
+    }
+  }
+  return [text];
 }
 
 @Injectable()
@@ -230,33 +255,54 @@ export class ChatService {
         })
       : null;
 
-    // 8. Emit the assistant's text as fake-streaming chunks. When the model
-    //    only produced a tool call and no content, fall back to the tool's
-    //    caption so the user isn't left staring at an empty bubble.
+    // 8. Maybe split into two "texts" (double-text effect). If the model
+    //    only produced a tool call and no content, fall back to the caption.
     const textBody = (llm.content || mediaArgs?.caption || '').trim();
-    const chunks = chunkForTyping(textBody);
-    let assembled = '';
-    for (const chunk of chunks) {
-      assembled += chunk;
-      yield { kind: 'text', chunk };
-      await sleep(computeChunkDelayMs());
-    }
+    const parts = maybeSplitForDoubleText(textBody);
+    const isDoubleText = parts.length > 1;
 
-    // 9. Persist the assistant message first, so the media event carries a
-    //    real messageId the frontend can reference when calling the unlock
-    //    endpoint. Media URLs are attached below once generation resolves.
     const modelUsed = (await this.modelRouter.detectLanguage(content)) === 'az' ? 'openai' : 'groq';
     const latencyMs = Date.now() - startTime;
-    const assistantMessage = await this.prisma.message.create({
-      data: {
-        conversationId,
-        role: 'assistant',
-        content: assembled,
-        language: conversation.language,
-        modelUsed,
-        latencyMs,
-      },
-    });
+    let lastMessageId = '';
+
+    // Helper to stream one part and persist it as a Message row.
+    const emitPart = async function* (
+      this: ChatService,
+      text: string,
+      isFirst: boolean,
+    ): AsyncGenerator<ChatEvent> {
+      const totalMs = computeTypingDelayMs(text.length);
+      yield { kind: 'typing', durationMs: totalMs };
+
+      const chunks = chunkForTyping(text);
+      for (const chunk of chunks) {
+        yield { kind: 'text', chunk };
+        await sleep(computeChunkDelayMs(totalMs, chunks.length));
+      }
+
+      const msg = await this.prisma.message.create({
+        data: {
+          conversationId,
+          role: 'assistant',
+          content: text,
+          language: conversation.language,
+          modelUsed,
+          latencyMs: isFirst ? latencyMs : undefined,
+        },
+      });
+      lastMessageId = msg.id;
+    }.bind(this);
+
+    // Emit part 1. If double-texting, signal the mid-turn break so the
+    // frontend can start a new bubble without clearing the typing state.
+    yield* emitPart(parts[0], true);
+    if (isDoubleText) {
+      yield { kind: 'part-complete', messageId: lastMessageId };
+      await sleep(DOUBLE_TEXT_GAP_MS);
+      yield* emitPart(parts[1], false);
+    }
+
+    const assistantMessage = { id: lastMessageId };
 
     // 10. Wait for the media (if requested), attach to the persisted message,
     //     and emit the media event with messageId + isLocked so the client

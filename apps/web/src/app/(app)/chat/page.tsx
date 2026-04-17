@@ -133,6 +133,13 @@ export default function ChatPage() {
       },
     );
 
+    // Double-text mid-turn signal. Freeze the current assistant bubble so
+    // the next chunks start a fresh one — but keep isTyping true so the
+    // indicator stays up during the 2s pause between parts.
+    newSocket.on('message-part-complete', () => {
+      currentAssistantMessage.current = '';
+    });
+
     newSocket.on('message-complete', () => {
       setIsTyping(false);
       currentAssistantMessage.current = '';

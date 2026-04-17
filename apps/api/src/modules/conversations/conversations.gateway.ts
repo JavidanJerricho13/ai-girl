@@ -78,12 +78,18 @@ export class ConversationsGateway implements OnGatewayInit {
             });
             break;
           case 'credits':
-            // Direct-emit to the originating client only. Credits are
-            // per-user, not per-conversation — broadcasting to the room
-            // would leak one user's balance to anyone else in it.
             client.emit('credits-updated', {
               balance: event.balance,
               delta: event.delta,
+            });
+            break;
+          case 'part-complete':
+            // Mid-turn break for double-text. Web handler flushes the
+            // current bubble and starts a new one; mobile ignores this
+            // event, which means mobile renders one merged bubble live
+            // (and two separate rows on conversation reload).
+            room.emit('message-part-complete', {
+              messageId: event.messageId,
             });
             break;
           case 'complete':

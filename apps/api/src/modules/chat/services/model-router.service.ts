@@ -59,25 +59,38 @@ export function buildPersonalityBlock(p: PersonalityInput): string {
 }
 
 /**
- * Pre-response thinking delay. Humans don't reply instantly; a short pause
- * before the first token lands makes the stream feel like typing instead of
- * a bot firing. Delay scales with user-message length (more to read = more
- * to think about) with a small random jitter.
+ * Pre-LLM thinking delay — a short beat before the model is even called.
+ * Simulates her "reading the message" before she starts typing. Shorter
+ * than the old value because the main typing simulation now lives in the
+ * per-chunk pacing after the LLM resolves.
  */
 export function computeThinkingDelayMs(userMessageLength: number): number {
-  const base = 420;
-  const perChar = 8;
-  const jitter = Math.floor(Math.random() * 320);
-  return Math.min(base + userMessageLength * perChar + jitter, 2400);
+  const base = 200;
+  const perChar = 4;
+  const jitter = Math.floor(Math.random() * 300);
+  return Math.min(base + userMessageLength * perChar + jitter, 1200);
 }
 
 /**
- * Per-chunk delay when we emulate streaming from a non-streaming LLM call.
- * Roughly 30–55 chars/second typing rhythm, with tiny randomness so it
- * doesn't feel metronomic.
+ * Post-LLM typing delay — the full "she's typing" window the user sees.
+ * Scales with her RESPONSE length (longer replies = longer typing) and
+ * includes a human-like jitter band. Capped at 12s so a long reply
+ * doesn't freeze the thread.
+ *   Formula: responseLength × 40ms + 500ms + random(0-1000ms)
  */
-export function computeChunkDelayMs(): number {
-  return 18 + Math.floor(Math.random() * 22); // 18–40ms per chunk
+export function computeTypingDelayMs(responseLength: number): number {
+  return Math.min(responseLength * 40 + 500 + Math.floor(Math.random() * 1000), 12000);
+}
+
+/**
+ * Per-chunk delay derived from the total typing window. Adds ±15% jitter
+ * per chunk so the stream doesn't feel metronomic.
+ */
+export function computeChunkDelayMs(totalMs: number, chunkCount: number): number {
+  if (chunkCount <= 0) return 20;
+  const base = Math.max(18, totalMs / chunkCount);
+  const jitter = base * 0.15 * (Math.random() * 2 - 1); // ±15%
+  return Math.max(10, Math.round(base + jitter));
 }
 
 @Injectable()
