@@ -1,78 +1,33 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
+import { useRef, useState } from 'react';
+import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion';
 import { LANDING_CHARACTERS, type LandingCharacter } from './data/characters';
 import { CharacterCard } from './CharacterCard';
 import { CharacterExpand } from './CharacterExpand';
-import { registerScrollTrigger } from '@/lib/gsap';
 
 export function CharacterGallery() {
   const sectionRef = useRef<HTMLElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
   const [active, setActive] = useState<LandingCharacter | null>(null);
-  const [stReady, setStReady] = useState(false);
+  const prefersReduced = useReducedMotion();
 
-  useEffect(() => {
-    void registerScrollTrigger().then(() => setStReady(true));
-  }, []);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start start', 'end end'],
+  });
 
-  useGSAP(
-    () => {
-      if (!stReady || !sectionRef.current || !trackRef.current) return;
-
-      const mm = gsap.matchMedia();
-
-      // Desktop: horizontal scroll-jack
-      mm.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
-        const track = trackRef.current!;
-        const section = sectionRef.current!;
-        const distance = () => track.scrollWidth - window.innerWidth + 96;
-
-        const tween = gsap.to(track, {
-          x: () => -distance(),
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top top',
-            end: () => `+=${distance()}`,
-            pin: true,
-            scrub: 1,
-            invalidateOnRefresh: true,
-            fastScrollEnd: true,
-          },
-        });
-
-        // Title fades as parade begins
-        if (titleRef.current) {
-          gsap.to(titleRef.current, {
-            opacity: 0.35,
-            y: -12,
-            scrollTrigger: {
-              trigger: section,
-              start: 'top top',
-              end: 'top -20%',
-              scrub: 0.5,
-            },
-          });
-        }
-
-        return () => {
-          tween.scrollTrigger?.kill();
-          tween.kill();
-        };
-      });
-    },
-    { dependencies: [stReady], scope: sectionRef },
-  );
+  // Map vertical scroll progress (0→1) to horizontal translate
+  // The section is pinned at 300vh height so we have scroll runway
+  const x = useTransform(scrollYProgress, [0, 1], ['0%', '-75%']);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0.35]);
+  const titleY = useTransform(scrollYProgress, [0, 0.15], [0, -12]);
 
   return (
     <section
       ref={sectionRef}
       aria-labelledby="cast-heading"
-      className="relative isolate w-full overflow-hidden bg-nocturne py-28 md:h-screen md:py-0"
+      className="relative isolate w-full overflow-hidden bg-nocturne"
+      style={{ height: prefersReduced ? 'auto' : '300vh' }}
     >
       {/* Ambient accent behind the parade */}
       <div
@@ -80,9 +35,12 @@ export function CharacterGallery() {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_120%,rgb(var(--color-plum)/0.7),transparent_60%)]"
       />
 
-      <div className="relative mx-auto flex h-full flex-col items-center gap-10 px-6 md:gap-16">
-        <header
-          ref={titleRef}
+      <div
+        className="relative mx-auto flex flex-col items-center gap-10 px-6 md:gap-16"
+        style={prefersReduced ? {} : { position: 'sticky', top: 0, height: '100vh', overflow: 'hidden' }}
+      >
+        <motion.header
+          style={prefersReduced ? {} : { opacity: titleOpacity, y: titleY }}
           className="flex max-w-xl flex-col items-center gap-3 pt-8 text-center md:pt-24"
         >
           <span className="text-xs uppercase tracking-[0.5em] text-lilac/70">The Cast</span>
@@ -92,13 +50,12 @@ export function CharacterGallery() {
           >
             Your type is here.
           </h2>
-        </header>
+        </motion.header>
 
         <div className="parade flex-1 w-full">
-          <div
-            ref={trackRef}
+          <motion.div
             className="flex items-center gap-8 px-6 md:flex-nowrap md:gap-10 md:pl-[12vw] md:pr-[12vw]"
-            style={{ willChange: 'transform' }}
+            style={prefersReduced ? {} : { x, willChange: 'transform' }}
           >
             {LANDING_CHARACTERS.map((character) => (
               <CharacterCard
@@ -109,7 +66,7 @@ export function CharacterGallery() {
                 greetingUrl={character.voiceSrc}
               />
             ))}
-          </div>
+          </motion.div>
         </div>
 
         {/* Mobile scroll hint */}

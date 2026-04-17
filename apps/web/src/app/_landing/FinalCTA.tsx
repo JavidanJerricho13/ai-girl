@@ -1,47 +1,53 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
+import { useCallback, useEffect, useRef } from 'react';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 export function FinalCTA() {
   const hitRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLAnchorElement>(null);
-  const labelRef = useRef<HTMLSpanElement>(null);
 
-  useEffect(() => {
-    const hit = hitRef.current;
-    const btn = btnRef.current;
-    const label = labelRef.current;
-    if (!hit || !btn || !label) return;
+  const rawX = useMotionValue(0);
+  const rawY = useMotionValue(0);
+  const lblX = useMotionValue(0);
+  const lblY = useMotionValue(0);
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
+  const btnSpringX = useSpring(rawX, { stiffness: 150, damping: 20 });
+  const btnSpringY = useSpring(rawY, { stiffness: 150, damping: 20 });
+  const lblSpringX = useSpring(lblX, { stiffness: 120, damping: 22 });
+  const lblSpringY = useSpring(lblY, { stiffness: 120, damping: 22 });
 
-    const quickBtnX = gsap.quickTo(btn, 'x', { duration: 0.45, ease: 'power3.out' });
-    const quickBtnY = gsap.quickTo(btn, 'y', { duration: 0.45, ease: 'power3.out' });
-    const quickLblX = gsap.quickTo(label, 'x', { duration: 0.55, ease: 'power3.out' });
-    const quickLblY = gsap.quickTo(label, 'y', { duration: 0.55, ease: 'power3.out' });
-
-    const onMove = (e: PointerEvent) => {
+  const onMove = useCallback(
+    (e: PointerEvent) => {
+      const btn = btnRef.current;
+      if (!btn) return;
       const rect = btn.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       const dx = e.clientX - cx;
       const dy = e.clientY - cy;
       const strength = 0.35;
-      quickBtnX(dx * strength);
-      quickBtnY(dy * strength);
-      quickLblX(dx * strength * 0.4);
-      quickLblY(dy * strength * 0.4);
-    };
+      rawX.set(dx * strength);
+      rawY.set(dy * strength);
+      lblX.set(dx * strength * 0.4);
+      lblY.set(dy * strength * 0.4);
+    },
+    [rawX, rawY, lblX, lblY],
+  );
 
-    const onLeave = () => {
-      quickBtnX(0);
-      quickBtnY(0);
-      quickLblX(0);
-      quickLblY(0);
-    };
+  const onLeave = useCallback(() => {
+    rawX.set(0);
+    rawY.set(0);
+    lblX.set(0);
+    lblY.set(0);
+  }, [rawX, rawY, lblX, lblY]);
+
+  useEffect(() => {
+    const hit = hitRef.current;
+    if (!hit) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return;
 
     hit.addEventListener('pointermove', onMove);
     hit.addEventListener('pointerleave', onLeave);
@@ -50,7 +56,7 @@ export function FinalCTA() {
       hit.removeEventListener('pointermove', onMove);
       hit.removeEventListener('pointerleave', onLeave);
     };
-  }, []);
+  }, [onMove, onLeave]);
 
   return (
     <section
@@ -80,20 +86,25 @@ export function FinalCTA() {
           ref={hitRef}
           className="relative flex items-center justify-center p-20"
         >
-          <Link
-            ref={btnRef}
-            href="/register"
-            className="relative inline-flex items-center gap-4 rounded-full bg-gradient-to-r from-lilac to-rose px-12 py-6 text-lg font-medium text-nocturne transition-[filter] duration-300 hover:brightness-110"
-            style={{
-              boxShadow:
-                '0 30px 80px -15px rgb(var(--color-lilac) / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.3)',
-            }}
-          >
-            <span ref={labelRef} className="relative inline-flex items-center gap-3">
-              Begin
-              <span aria-hidden>→</span>
-            </span>
-          </Link>
+          <motion.div style={{ x: btnSpringX, y: btnSpringY }}>
+            <Link
+              ref={btnRef}
+              href="/register"
+              className="relative inline-flex items-center gap-4 rounded-full bg-gradient-to-r from-lilac to-rose px-12 py-6 text-lg font-medium text-nocturne transition-[filter] duration-300 hover:brightness-110"
+              style={{
+                boxShadow:
+                  '0 30px 80px -15px rgb(var(--color-lilac) / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.3)',
+              }}
+            >
+              <motion.span
+                className="relative inline-flex items-center gap-3"
+                style={{ x: lblSpringX, y: lblSpringY }}
+              >
+                Begin
+                <span aria-hidden>→</span>
+              </motion.span>
+            </Link>
+          </motion.div>
         </div>
       </div>
     </section>

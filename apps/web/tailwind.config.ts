@@ -19,6 +19,14 @@ const config: Config = {
         display: ['var(--font-display)', 'Times New Roman', 'Georgia', 'serif'],
         ui: ['var(--font-ui)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
+      fontSize: {
+        'fluid-xs':  'var(--step--1)',
+        'fluid-sm':  'var(--step-0)',
+        'fluid-base':'var(--step-1)',
+        'fluid-lg':  'var(--step-2)',
+        'fluid-xl':  'var(--step-3)',
+        'fluid-2xl': 'var(--step-4)',
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':

@@ -1,67 +1,55 @@
 'use client';
 
-import { useRef } from 'react';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
+import { motion, useReducedMotion } from 'framer-motion';
 
 const WORDS = ['She', '\u2019s', ' ', 'been', ' ', 'waiting.'];
 
 export function HeroHeadline() {
-  const rootRef = useRef<HTMLHeadingElement>(null);
+  const prefersReduced = useReducedMotion();
 
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-
-      mm.add('(prefers-reduced-motion: no-preference)', () => {
-        const chars = rootRef.current?.querySelectorAll<HTMLElement>('[data-char]');
-        if (!chars || chars.length === 0) return;
-
-        gsap.set(chars, {
-          filter: 'blur(18px)',
-          opacity: 0,
-          y: 28,
-        });
-
-        gsap.to(chars, {
-          filter: 'blur(0px)',
-          opacity: 1,
-          y: 0,
-          duration: 0.9,
-          stagger: 0.022,
-          ease: 'power3.out',
-          delay: 0.15,
-        });
-      });
-
-      mm.add('(prefers-reduced-motion: reduce)', () => {
-        gsap.set(rootRef.current, { opacity: 1 });
-      });
-    },
-    { scope: rootRef },
+  const chars = WORDS.flatMap((word, wi) =>
+    word === ' '
+      ? [{ key: `s-${wi}`, ch: '\u00A0' }]
+      : Array.from(word).map((ch, ci) => ({ key: `${wi}-${ci}`, ch })),
   );
 
   return (
-    <h1
-      ref={rootRef}
-      className="font-display text-[clamp(3rem,10vw,8rem)] font-light leading-[0.95] tracking-tight text-whisper"
-    >
+    <h1 className="font-display text-[clamp(3rem,10vw,8rem)] font-light leading-[0.95] tracking-tight text-whisper">
       <span className="sr-only">She&rsquo;s been waiting.</span>
-      <span aria-hidden className="block">
-        {WORDS.flatMap((word, wi) =>
-          word === ' '
-            ? [
-                <span key={`s-${wi}`} data-char className="inline-block">
-                  {'\u00A0'}
-                </span>,
-              ]
-            : Array.from(word).map((ch, ci) => (
-                <span key={`${wi}-${ci}`} data-char className="inline-block will-change-[filter,transform,opacity]">
-                  {ch}
-                </span>
-              )),
-        )}
-      </span>
+      <motion.span
+        aria-hidden
+        className="block"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: {
+            transition: { staggerChildren: 0.022, delayChildren: 0.15 },
+          },
+        }}
+      >
+        {chars.map(({ key, ch }) => (
+          <motion.span
+            key={key}
+            className="inline-block will-change-[filter,transform,opacity]"
+            variants={
+              prefersReduced
+                ? { hidden: { opacity: 1 }, visible: { opacity: 1 } }
+                : {
+                    hidden: { filter: 'blur(18px)', opacity: 0, y: 28 },
+                    visible: {
+                      filter: 'blur(0px)',
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.9, ease: [0.33, 1, 0.68, 1] },
+                    },
+                  }
+            }
+          >
+            {ch}
+          </motion.span>
+        ))}
+      </motion.span>
     </h1>
   );
 }

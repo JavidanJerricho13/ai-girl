@@ -3,7 +3,6 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     optimizePackageImports: [
-      'gsap',
       'three',
       '@react-three/fiber',
       '@react-three/drei',
