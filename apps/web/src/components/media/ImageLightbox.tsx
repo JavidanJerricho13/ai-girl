@@ -153,7 +153,7 @@ export function ImageLightbox({ item, image, onClose }: ImageLightboxProps) {
             initial={{ x: 40, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="w-80 bg-gray-950/90 backdrop-blur-md border-l border-gray-800 p-6 flex flex-col shrink-0 overflow-y-auto hidden lg:flex"
+            className="w-80 glass border-l border-white/5 p-6 flex flex-col shrink-0 overflow-y-auto hidden lg:flex"
           >
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-5">
               Details

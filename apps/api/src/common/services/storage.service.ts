@@ -102,6 +102,39 @@ export class StorageService {
   }
 
   /**
+   * Upload image with WebP compression + thumbnail + blur placeholder.
+   * Full-size WebP at quality 85 (~60-80% smaller than PNG).
+   * Thumbnail at 400px width for card grids.
+   * Blur data URL (4x4 pixel) for next/image placeholder.
+   */
+  async uploadOptimizedImage(
+    rawBuffer: Buffer,
+    characterId?: string,
+  ): Promise<{ fullUrl: string; thumbUrl: string; blurDataUrl: string }> {
+    const sharp = require('sharp');
+
+    const [fullBuffer, thumbBuffer, blurBuffer] = await Promise.all([
+      sharp(rawBuffer).webp({ quality: 85 }).toBuffer(),
+      sharp(rawBuffer).resize(400, null, { fit: 'inside' }).webp({ quality: 75 }).toBuffer(),
+      sharp(rawBuffer).resize(4, 4, { fit: 'cover' }).png().toBuffer(),
+    ]);
+
+    const folder = characterId ? `images/characters/${characterId}` : 'images';
+    const timestamp = Date.now();
+
+    const [full, thumb] = await Promise.all([
+      this.uploadFile(fullBuffer, folder, `${timestamp}.webp`, 'image/webp'),
+      this.uploadFile(thumbBuffer, folder, `${timestamp}-thumb.webp`, 'image/webp'),
+    ]);
+
+    return {
+      fullUrl: full.url,
+      thumbUrl: thumb.url,
+      blurDataUrl: `data:image/png;base64,${blurBuffer.toString('base64')}`,
+    };
+  }
+
+  /**
    * Upload audio file (TTS output)
    */
   async uploadAudio(

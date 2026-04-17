@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { GalleryItem, GalleryItemData } from './GalleryItem';
 import { ImageIcon, Sparkles } from 'lucide-react';
 import Link from 'next/link';
@@ -34,9 +35,17 @@ export function GalleryGrid({ items, onItemClick }: GalleryGridProps) {
   }
 
   return (
-    <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
-      {items.map((item) => (
-        <GalleryItem key={item.id} item={item} onClick={onItemClick} />
+    <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 space-y-3">
+      {items.map((item, i) => (
+        <motion.div
+          key={item.id}
+          className="break-inside-avoid"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: Math.min(i * 0.03, 0.25), duration: 0.3 }}
+        >
+          <GalleryItem item={item} onClick={onItemClick} />
+        </motion.div>
       ))}
     </div>
   );
