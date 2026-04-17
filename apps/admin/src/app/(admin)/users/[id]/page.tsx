@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -61,7 +61,7 @@ interface UserDetail {
 }
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 // ── Helpers ──────────────────────────────────────────────
@@ -174,7 +174,7 @@ function CreditAdjustmentModal({
 // ── Main Page ────────────────────────────────────────────
 
 export default function UserDetailPage({ params }: PageProps) {
-  const { id } = use(params);
+  const { id } = params;
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);

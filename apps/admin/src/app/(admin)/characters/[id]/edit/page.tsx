@@ -1,6 +1,5 @@
 'use client';
 
-import { use } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -8,11 +7,11 @@ import apiClient from '@/lib/api-client';
 import { CharacterForm } from '@/components/characters/CharacterForm';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 export default function EditCharacterPage({ params }: PageProps) {
-  const { id } = use(params);
+  const { id } = params;
 
   const { data: character, isLoading, isError } = useQuery({
     queryKey: ['admin-character', id],

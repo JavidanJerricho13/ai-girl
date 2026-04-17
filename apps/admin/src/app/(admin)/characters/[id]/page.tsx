@@ -1,6 +1,5 @@
 'use client';
 
-import { use } from 'react';
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -56,7 +55,7 @@ interface Character {
 }
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 // ── Helpers ──────────────────────────────────────────────
@@ -181,7 +180,7 @@ function DetailSkeleton() {
 // ── Main Page ────────────────────────────────────────────
 
 export default function CharacterDetailPage({ params }: PageProps) {
-  const { id } = use(params);
+  const { id } = params;
   const queryClient = useQueryClient();
 
   const {

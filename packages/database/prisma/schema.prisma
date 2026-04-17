@@ -517,6 +517,16 @@ model GenerationJob {
 }
 
 // ============================================
+// PLATFORM CONFIG (key-value store for admin settings)
+// ============================================
+
+model PlatformConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================
 // ADMIN AUDIT LOG
 // ============================================
 

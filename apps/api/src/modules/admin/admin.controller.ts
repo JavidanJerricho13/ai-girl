@@ -265,6 +265,20 @@ export class AdminController {
     return this.adminService.getAuditLogs({ page, limit, action, adminId });
   }
 
+  // ── Settings ─────────────────────────────────
+
+  @Get('settings')
+  async getSettings() {
+    return this.adminService.getSettings();
+  }
+
+  @Patch('settings')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async updateSettings(@Body() body: Record<string, string>, @Request() req) {
+    return this.adminService.updateSettings(body, req.user.id);
+  }
+
   // ── Transactions ────────────────────────────
 
   @Get('transactions')

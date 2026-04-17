@@ -723,6 +723,70 @@ export class AdminService {
     };
   }
 
+  // ── Platform Config ────────────────────────────
+
+  private readonly CONFIG_DEFAULTS: Record<string, string> = {
+    'credits.chat_cost': '1',
+    'credits.image_cost': '10',
+    'credits.voice_cost': '3',
+    'credits.initial_balance': '100',
+    'credits.daily_reward': '5',
+    'credits.guest_credits': '5',
+    'llm.model': 'llama-3.3-70b-versatile',
+    'llm.temperature': '0.85',
+    'llm.max_tokens': '1024',
+    'moderation.auto_block_threshold': '0.9',
+    'moderation.nsfw_policy': 'moderate',
+    'platform.maintenance_mode': 'false',
+    'platform.registration_open': 'true',
+    'platform.guest_ttl_days': '7',
+  };
+
+  async getSettings(): Promise<Record<string, string>> {
+    const rows = await (this.prisma as any).platformConfig.findMany();
+    const result = { ...this.CONFIG_DEFAULTS };
+    for (const row of rows) {
+      result[row.key] = row.value;
+    }
+    return result;
+  }
+
+  async updateSettings(settings: Record<string, string>, adminId: string) {
+    const before = await this.getSettings();
+    const updates: { key: string; value: string }[] = [];
+
+    for (const [key, value] of Object.entries(settings)) {
+      if (!this.CONFIG_DEFAULTS.hasOwnProperty(key)) continue; // ignore unknown keys
+      if (before[key] === value) continue; // skip unchanged
+      updates.push({ key, value: String(value) });
+    }
+
+    if (updates.length === 0) return before;
+
+    // Upsert each changed key
+    for (const { key, value } of updates) {
+      await (this.prisma as any).platformConfig.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value },
+      });
+    }
+
+    const after = await this.getSettings();
+
+    await this.logAction({
+      adminId,
+      action: 'UPDATE_SETTINGS',
+      resourceType: 'PLATFORM_CONFIG',
+      resourceId: 'global',
+      before: Object.fromEntries(updates.map(u => [u.key, before[u.key]])),
+      after: Object.fromEntries(updates.map(u => [u.key, u.value])),
+      description: `Updated ${updates.length} setting(s): ${updates.map(u => u.key).join(', ')}`,
+    });
+
+    return after;
+  }
+
   // ── Audit Logs Viewer ─────────────────────────
 
   async getAuditLogs(params: {
