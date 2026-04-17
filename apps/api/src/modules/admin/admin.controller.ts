@@ -79,6 +79,17 @@ export class AdminController {
     return this.adminService.updateCharacterVisibility(id, isPublic);
   }
 
+  /**
+   * Pre-generate (or regenerate) a 3-second greeting voice clip for this
+   * character. Uses the character's voiceId + first signaturePhrase (or
+   * a generic "Hi, it's {name}."). Stored as a CharacterMedia row with
+   * type='greeting'. Call this after creating/editing a character.
+   */
+  @Post('characters/:id/regenerate-greeting')
+  async regenerateGreeting(@Param('id') id: string) {
+    return this.adminService.regenerateGreeting(id);
+  }
+
   // ── Users ────────────────────────────────────
 
   @Get('users')

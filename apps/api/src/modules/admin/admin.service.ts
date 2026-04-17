@@ -1,9 +1,19 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
+import { ElevenLabsService } from '../../integrations/elevenlabs/elevenlabs.service';
+import { StorageService } from '../../common/services/storage.service';
+
+const DEFAULT_ELEVEN_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(AdminService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private elevenLabs: ElevenLabsService,
+    private storage: StorageService,
+  ) {}
 
   // ── Characters ────────────────────────────────
 
@@ -114,6 +124,64 @@ export class AdminService {
       select: { id: true, name: true, isPublic: true },
     });
     return character;
+  }
+
+  /**
+   * Generate (or regenerate) a short greeting voice clip for a character.
+   * Uses signaturePhrases[0] if set, else a generic "Hi, it's {name}."
+   * Stored as CharacterMedia type='greeting'. Previous greeting row for
+   * this character is replaced so each character has exactly one.
+   */
+  async regenerateGreeting(characterId: string) {
+    const character = await this.prisma.character.findUnique({
+      where: { id: characterId },
+      select: {
+        id: true,
+        displayName: true,
+        voiceId: true,
+        signaturePhrases: true,
+      } as any,
+    }) as any;
+
+    if (!character) throw new NotFoundException('Character not found');
+
+    const phrases: string[] = character.signaturePhrases ?? [];
+    const script = phrases[0] || `Hi, it's ${character.displayName}.`;
+    const voiceId = character.voiceId || DEFAULT_ELEVEN_VOICE_ID;
+
+    this.logger.log(`Generating greeting for ${character.displayName}: "${script}"`);
+
+    const audioBuffer = await this.elevenLabs.synthesize({
+      text: script,
+      voiceId,
+    });
+
+    const upload = await this.storage.uploadAudio(
+      audioBuffer,
+      characterId,
+      `greeting-${Date.now()}.mp3`,
+    );
+
+    // Replace previous greeting if one exists.
+    await this.prisma.characterMedia.deleteMany({
+      where: { characterId, type: 'greeting' },
+    });
+
+    const media = await this.prisma.characterMedia.create({
+      data: {
+        characterId,
+        type: 'greeting',
+        url: upload.url,
+        metadata: {
+          script,
+          voiceId,
+          generatedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    this.logger.log(`Greeting ready for ${character.displayName}: ${upload.url}`);
+    return { url: media.url, mediaId: media.id };
   }
 
   // ── Users ────────────────────────────────────

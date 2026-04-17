@@ -106,6 +106,7 @@ export function CharacterGallery() {
                 character={character}
                 isActive={active?.id === character.id}
                 onSelect={() => setActive(character)}
+                greetingUrl={character.voiceSrc}
               />
             ))}
           </div>

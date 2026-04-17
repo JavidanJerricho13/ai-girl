@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { Volume2 } from 'lucide-react';
 import { useGaze } from './hooks/useGaze';
 import type { LandingCharacter } from './data/characters';
 
@@ -9,13 +10,32 @@ type Props = {
   character: LandingCharacter;
   isActive: boolean;
   onSelect: () => void;
+  /** Greeting voice clip URL. Null/undefined = no voice preview. */
+  greetingUrl?: string | null;
 };
 
-export function CharacterCard({ character, isActive, onSelect }: Props) {
+export function CharacterCard({ character, isActive, onSelect, greetingUrl }: Props) {
   const wrapRef = useRef<HTMLButtonElement>(null);
   const portraitRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useGaze(wrapRef, portraitRef, { maxX: 8, maxY: 6 });
+
+  const handleVoicePreview = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation(); // Don't trigger the card's onClick.
+      if (!greetingUrl) return;
+
+      if (!audioRef.current) {
+        audioRef.current = new Audio(greetingUrl);
+        audioRef.current.addEventListener('ended', () => setIsPlaying(false));
+      }
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    },
+    [greetingUrl],
+  );
 
   return (
     <button
@@ -55,7 +75,7 @@ export function CharacterCard({ character, isActive, onSelect }: Props) {
           className="object-cover object-[center_22%]"
         />
 
-        {/* Atmosphere bottom fade — needed for legibility of the name/tagline overlay */}
+        {/* Atmosphere bottom fade */}
         <div
           aria-hidden
           className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-nocturne via-nocturne/85 to-transparent"
@@ -75,13 +95,32 @@ export function CharacterCard({ character, isActive, onSelect }: Props) {
         </h3>
         <p className="text-base text-whisper/75">{character.tagline}</p>
 
-        <span
-          aria-hidden
-          className="mt-4 inline-flex items-center gap-2 text-sm text-whisper/60 transition-colors duration-300 group-hover:text-whisper/90"
-        >
-          {isActive ? 'Open' : 'Meet her'}
-          <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-        </span>
+        <div className="mt-4 flex items-center justify-between">
+          <span
+            aria-hidden
+            className="inline-flex items-center gap-2 text-sm text-whisper/60 transition-colors duration-300 group-hover:text-whisper/90"
+          >
+            {isActive ? 'Open' : 'Meet her'}
+            <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+          </span>
+
+          {/* Voice preview */}
+          {greetingUrl ? (
+            <button
+              type="button"
+              onClick={handleVoicePreview}
+              aria-label={`Play greeting from ${character.name}`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-all duration-300 ${
+                isPlaying
+                  ? 'border-white/30 bg-white/10 text-whisper'
+                  : 'border-white/10 bg-white/[0.03] text-whisper/60 hover:text-whisper hover:border-white/25'
+              }`}
+            >
+              <Volume2 size={13} className={isPlaying ? 'animate-pulse' : ''} />
+              {isPlaying ? 'Playing…' : 'Hear her voice'}
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <style jsx>{`

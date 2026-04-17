@@ -53,8 +53,7 @@ export class CharactersService {
       where,
       include: {
         media: {
-          where: { type: 'profile' },
-          take: 1,
+          where: { type: { in: ['profile', 'greeting'] } },
         },
         _count: {
           select: {
