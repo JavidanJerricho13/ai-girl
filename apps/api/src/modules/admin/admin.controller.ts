@@ -222,6 +222,17 @@ export class AdminController {
     return this.adminService.reviewModerationLog(id, action, req.user.id);
   }
 
+  @Patch('users/:id/shadow-ban')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async toggleShadowBan(
+    @Param('id') id: string,
+    @Body('isShadowBanned') isShadowBanned: boolean,
+    @Request() req,
+  ) {
+    return this.adminService.toggleShadowBan(id, isShadowBanned, req.user.id);
+  }
+
   // ── Analytics ────────────────────────────────
 
   @Get('analytics/overview')

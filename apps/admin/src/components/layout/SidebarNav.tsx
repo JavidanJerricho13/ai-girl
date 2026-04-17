@@ -11,6 +11,7 @@ import {
   CreditCard,
   Settings,
   ExternalLink,
+  ScrollText,
 } from 'lucide-react';
 
 interface NavItem {
@@ -44,6 +45,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
   {
     title: 'System',
     items: [
+      { href: '/audit', label: 'Audit Log', icon: ScrollText },
       { href: '/settings', label: 'Settings', icon: Settings },
     ],
   },

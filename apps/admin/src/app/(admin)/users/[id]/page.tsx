@@ -18,6 +18,7 @@ import {
   ArrowUp,
   ArrowDown,
   X,
+  EyeOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
@@ -348,6 +349,35 @@ export default function UserDetailPage({ params }: PageProps) {
                 )}
                 {user.isActive ? 'Ban User' : 'Unban User'}
               </button>
+            </div>
+
+            {/* Shadow Ban */}
+            <div>
+              <p className="text-xs font-medium text-zinc-500 mb-1.5">Shadow Ban</p>
+              <button
+                onClick={async () => {
+                  try {
+                    await apiClient.patch(`/admin/users/${id}/shadow-ban`, {
+                      isShadowBanned: !user.isShadowBanned,
+                    });
+                    toast.success(user.isShadowBanned ? 'Shadow ban removed' : 'User shadow-banned');
+                    refetch();
+                  } catch {
+                    toast.error('Failed to update shadow ban');
+                  }
+                }}
+                className={`w-full flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  user.isShadowBanned
+                    ? 'bg-amber-900/20 border border-amber-800/30 text-amber-400 hover:bg-amber-900/30'
+                    : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                }`}
+              >
+                <EyeOff size={14} />
+                {user.isShadowBanned ? 'Remove Shadow Ban' : 'Shadow Ban'}
+              </button>
+              <p className="text-[10px] text-zinc-600 mt-1">
+                User can still log in but content is hidden from others
+              </p>
             </div>
 
             {/* Info */}

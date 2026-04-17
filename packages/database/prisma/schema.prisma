@@ -58,8 +58,9 @@ model User {
   dob         DateTime? // Date of birth for age gate
   ageVerified Boolean   @default(false) // true after DOB + checkbox confirmation
 
-  // Metadata
-  isActive    Boolean   @default(true)
+  // Moderation
+  isActive       Boolean   @default(true)
+  isShadowBanned Boolean   @default(false)
   isVerified  Boolean   @default(false)
   lastLoginAt DateTime?
   createdAt   DateTime  @default(now())

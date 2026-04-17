@@ -287,6 +287,7 @@ export class AdminService {
           isVerified: true,
           language: true,
           nsfwEnabled: true,
+          isShadowBanned: true,
           createdAt: true,
           lastLoginAt: true,
           _count: {
@@ -474,6 +475,32 @@ export class AdminService {
     });
 
     return { id, credits: newBalance };
+  }
+
+  async toggleShadowBan(id: string, isShadowBanned: boolean, adminId: string) {
+    const before = await this.prisma.user.findUnique({
+      where: { id },
+      select: { isShadowBanned: true, email: true },
+    });
+    if (!before) throw new NotFoundException('User not found');
+
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: { isShadowBanned },
+      select: { id: true, email: true, isShadowBanned: true },
+    });
+
+    await this.logAction({
+      adminId,
+      action: 'SHADOW_BAN',
+      resourceType: 'USER',
+      resourceId: id,
+      before: { isShadowBanned: before.isShadowBanned },
+      after: { isShadowBanned },
+      description: `${isShadowBanned ? 'Shadow-banned' : 'Un-shadow-banned'} user ${before.email}`,
+    });
+
+    return user;
   }
 
   // ── Moderation ────────────────────────────────
