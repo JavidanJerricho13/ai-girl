@@ -122,6 +122,16 @@ class ApiService {
     return response.data;
   }
 
+  async claimDailyReward() {
+    const response = await this.client.post('/credits/claim-daily');
+    return response.data;
+  }
+
+  async claimProfileBonuses() {
+    const response = await this.client.post('/credits/claim-profile-bonuses');
+    return response.data;
+  }
+
   // ============================================
   // CHARACTERS
   // ============================================

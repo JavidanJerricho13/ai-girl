@@ -5,32 +5,44 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "scheme": "ethereal",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#8B5CF6"
+      "backgroundColor": "#0A0B1E"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ethereal.app"
+      "bundleIdentifier": "com.ethereal.app",
+      "associatedDomains": ["applinks:ethereal.app"]
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#8B5CF6"
+        "backgroundColor": "#0A0B1E"
       },
-      "package": "com.ethereal.app"
+      "package": "com.ethereal.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "ethereal" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "platforms": ["ios", "android"],
     "plugins": [
-      "expo-audio"
+      "expo-audio",
+      "expo-haptics",
+      "expo-notifications"
     ]
   }
 }
